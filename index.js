@@ -7,6 +7,8 @@ require("dotenv").config();
 // Grab your account ID and private key from the .env file
 const operatorAccountId = process.env.OPERATOR_ID;
 const operatorPrivateKey = process.env.OPERATOR_KEY;
+console.log(operatorPrivateKey);
+const operatorPublicKey = operatorPrivateKey.operatorPublicKey;
 
 // If we weren't able to grab it, we should throw a new error
 if (operatorPrivateKey == null ||
@@ -31,6 +33,7 @@ client.setOperator(operatorAccountId, operatorPrivateKey);
         .execute(client))
         .getReceipt(client);
 
+    console.log("Public key", operatorPublicKey);
     console.log(receipt);
     console.log("balance after transfer:", (await client.getAccountBalance(operatorAccountId)));
 
