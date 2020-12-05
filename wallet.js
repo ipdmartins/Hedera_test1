@@ -2,9 +2,11 @@ const { Ed25519PrivateKey, AccountCreateTransaction, AccountInfoQuery,
     AccountUpdateTransaction, CryptoTransferTransaction, AccountRecordsQuery,
     AccountBalanceQuery } = require("@hashgraph/sdk");
 const { client, operatorAccountId, operatorPrivateKey, operatorPublicKey } = require('./myaccount');
-const framework = require("./framework");
+const frameworkAnalyzer = require("./frameworkAnalyzer");
 
 var txconfirmedcount = 0;
+var sumTxInputTxComfirmed = 0;
+var cpuUsageAtTime = 0;
 
 async function newAccount() {
     const myAccountBalance = await new AccountBalanceQuery()
@@ -16,53 +18,111 @@ async function newAccount() {
     console.log(`MY PRIVATE KEY: ${operatorPrivateKey}`);
     console.log(`MY PUBLIC KEY: ${operatorPublicKey}`);
 
-    const privateKey = await Ed25519PrivateKey.generate();
+    const newPrivateKey = await Ed25519PrivateKey.generate();
 
-    console.log(`NEW PRIVATE KEY: ${privateKey.toString()}`);
-    console.log(`NEW PUBLIC KEY: ${privateKey.publicKey.toString()}`);
+    console.log(`NEW PRIVATE KEY: ${newPrivateKey.toString()}`);
+    console.log(`NEW PUBLIC KEY: ${newPrivateKey.publicKey.toString()}`);
 
     //Creating an account
-    const transactionId = await new AccountCreateTransaction()
-        .setKey(privateKey.publicKey)
+    const newTransactionId = await new AccountCreateTransaction()
+        .setKey(newPrivateKey.publicKey)
         .setInitialBalance(1000)
         .execute(client);
 
-    // var antes = Date.now();//registra o início do processo de transação
-    // console.log(antes);
-    const transactionRecord = await transactionId.getRecord(client);
+    // const transactionRecord = await newTransactionId.getRecord(client);
 
-    const transactionReceipt = await transactionId.getReceipt(client);
+    const transactionReceipt = await newTransactionId.getReceipt(client);
 
     const newAccountId = transactionReceipt.getAccountId();
 
-    const accountBalance = await new AccountBalanceQuery()
+    const newAccountBalance = await new AccountBalanceQuery()
         .setAccountId(newAccountId)
         .execute(client);
 
     console.log("NEW ACCOUNT ID: " + newAccountId);
-    console.log("NEW ACCOUNT BALANCE: " + accountBalance);
+    console.log("NEW ACCOUNT BALANCE: " + newAccountBalance);
 
-    ///////// FRAMEWORK ////////////////////
+    //transfer(newAccountId);
+    //updateAccount(newAccountId, newPrivateKey);
+}
 
-    //se a transação foi efetivada, tx confirmadas adiciona 1
-    // if (transactionRecord.receipt.status == "SUCCESS") {
-    //     txconfirmedcount++;
-    //     console.log(txconfirmedcount);
-        //registra o momento fim da transação
-    //     console.log(transactionRecord.consensusTimestamp.seconds);
-    // } else {
-    //     console.log("fail")
-    // }
-    // var depois = Date.now();//registra o fim do processo de transação
-    // console.log(depois);
-    //fórmula do framework implementada "transacoes por segundo"
-    // const TPS = framework.analyzeTPS(txconfirmedcount, antes, depois);
-    // console.log("Transações por segundo: ", TPS);
+async function transfer(receiverAccountId, numberOfTransactions) {
+    // var antes = Date.now();//registra o início do processo de transação
+    // console.log(antes);
 
-    ///////// FRAMEWORK ////////////////////
+    for (let index = 0; index < numberOfTransactions; index++) {
+        var txInput = Date.now();
+        const receipt = await (await new CryptoTransferTransaction()
+            .addSender(operatorAccountId, 100)
+            .addRecipient(receiverAccountId, 100)
+            .setTransactionMemo("sdk example")
+            .execute(client))
+            .getReceipt(client)
+        // .getRecord(client)
 
-    transfer(newAccountId);
-    //updateAccount(newAccountId, privateKey);
+        //se a transação foi efetivada, tx confirmadas adiciona 1
+        if (receipt.receipt.status == "SUCCESS") {
+            var txConfirmed = Date.now();
+            sumTxInputTxComfirmed += (txConfirmed + txInput)
+            txconfirmedcount++;
+            // console.log(txconfirmedcount);
+        } else {
+            console.log("fail")
+        }
+    }
+    //registra o momento fim da transação
+    var depois = Date.now();//registra o fim do processo de transação
+    console.log(receipt.conconsensusTimestamp.seconds);
+
+    const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, antes, depois);
+    console.log("Transacoes por segundo: ", TPS);
+    
+    const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
+    console.log("Media do atraso de resposta: ", ARD);
+
+    //buscar a frequencia do core (F) e com o netdata buscar o uso da CPU
+    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, F, CPU)
+    console.log("Transacoes por CPU: ", TPC);
+
+    //Não sei se é possível achar a memoria usada em blockchain e a memoria virtual real??????
+    const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
+    console.log("Transacoes de memoria por segundo: ", TPMS);
+
+    //buscar DISKR e o DISKW com o netdata
+    const TPDIO = frameworkAnalyzer.analyzeTPDIO(txconfirmedcount, DISKR, DISKW)
+    console.log("Transacoes por disco: ", TPDIO);
+
+    //buscar UPLOAD e o DOWNLOAD com o netdata
+    const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)
+    console.log("Transacoes de dados na rede: ", TPND);
+
+}
+
+async function accountRecords(receiverAccountId, receipt) {
+    const myNewAccountBalance = await new AccountBalanceQuery()
+        .setAccountId(operatorAccountId)
+        .execute(client);
+
+    const receiverNewAccountBalance = await new AccountBalanceQuery()
+        .setAccountId(receiverAccountId)
+        .execute(client);
+
+    console.log("SENDER'S BALANCE AFTER TRANSFER: ", myNewAccountBalance);
+    console.log("RECEIVER'S BALANCE AFTER TRANSFER: ", receiverNewAccountBalance);
+    console.log("TRANSACTION RECEIPT: ", receipt);
+
+    const info = await new AccountInfoQuery()
+        .setAccountId(operatorAccountId)
+        .execute(client);
+
+    console.log(`OPERATOR ACCOUNT (${operatorAccountId}) INFO QUERY = ${JSON.stringify(info, null, 4)}`);
+
+    const infoII = await new AccountInfoQuery()
+        .setAccountId(receiverAccountId)
+        .execute(client);
+
+    console.log(`NEW OPERATOR ACCOUNT (${receiverAccountId}) INFO QUERY = ${JSON.stringify(infoII, null, 4)}`);
+
 }
 
 async function updateAccount(newAccountId, privateKey) {
@@ -97,52 +157,6 @@ async function updateAccount(newAccountId, privateKey) {
     console.log(`key = ${acctInfo.key}`)
 
     transfer(newAccountId);
-}
-
-async function transfer(newAccountId) {
-    const receipt = await (await new CryptoTransferTransaction()
-        .addSender(operatorAccountId, 100)
-        .addRecipient(newAccountId, 100)
-        .setTransactionMemo("sdk example")
-        .execute(client))
-        .getReceipt(client);
-
-    const myNewAccountBalance = await new AccountBalanceQuery()
-        .setAccountId(operatorAccountId)
-        .execute(client);
-
-    const receiverNewAccountBalance = await new AccountBalanceQuery()
-        .setAccountId(newAccountId)
-        .execute(client);
-    
-    console.log("SENDER'S BALANCE AFTER TRANSFER: ", myNewAccountBalance);
-    console.log("RECEIVER'S BALANCE AFTER TRANSFER: ", receiverNewAccountBalance);
-    console.log("TRANSACTION RECEIPT: ", receipt);
-
-    const info = await new AccountInfoQuery()
-        .setAccountId(operatorAccountId)
-        .execute(client);
-
-    console.log(`OPERATOR ACCOUNT (${operatorAccountId}) INFO QUERY = ${JSON.stringify(info, null, 4)}`);
-
-    const infoII = await new AccountInfoQuery()
-        .setAccountId(newAccountId)
-        .execute(client);
-
-    console.log(`NEW OPERATOR ACCOUNT (${newAccountId}) INFO QUERY = ${JSON.stringify(infoII, null, 4)}`);
-
-    // const accountRecord = await new AccountRecordsQuery()
-    //     .setAccountId(operatorAccountId)
-    //     .execute(client);
-    // console.log(`OPERATOR ACCOUNT (${operatorAccountId}) INFO RECORD QUERY = ${JSON.stringify(accountRecord
-
-    // )}`);
-
-    // const accountRecordII = await new AccountRecordsQuery()
-    //     .setAccountId(newAccountId)
-    //     .execute(client);
-    // console.log(`NEW OPERATOR ACCOUNT (${newAccountId}) INFO RECORD QUERY = ${JSON.stringify(accountRecordII, null, 4)}`);
-
 }
 
 newAccount();
