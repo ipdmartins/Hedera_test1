@@ -34,9 +34,14 @@ module.exports = {
 
 	//Transactions Per CPU
 	analyzeTPC(txconfirmedcount, F, CPU) {
-		//TPC: Transactions Per Second (txconfirmedcount) during a period of time and
-		//F is the frequency of a single CPU core and CPU(t) is the CPU usage 
-		//of the blockchain program at t
+		/*
+		TPC: Transactions Per Second (txconfirmedcount) during a period of time and F is the frequency 
+		of a single CPU core and CPU(t) is the CPU usage of the blockchain program at t.
+		A velocidade é medida de gigahertz (GHz), e representa um único núcleo do processador. Caso o 
+		processador tenha múltiplos núcleos (como a maioria deles), cada um dele terá essa mesma velocidade.
+		Neste HP tenho 4 nucleos com 2.53ghz cada. O systeminformation traz a frequencia/speed cpu por core
+		mas não traz o percentual de uso.
+		*/
 		
 		var TPC = txconfirmedcount / (F * CPU);
 

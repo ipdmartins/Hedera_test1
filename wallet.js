@@ -84,7 +84,8 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, F, CPU)
     console.log("Transacoes por CPU: ", TPC);
 
-    //Não sei se é possível achar a memoria usada em blockchain e a memoria virtual real??????
+    //Não sei se é possível achar a memoria usada em blockchain e a memoria virtual real???
+    //investigar o Kabuto
     const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
     console.log("Transacoes de memoria por segundo: ", TPMS);
 
@@ -95,6 +96,8 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     //buscar UPLOAD e o DOWNLOAD com o netdata
     const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)
     console.log("Transacoes de dados na rede: ", TPND);
+
+    var startUsage = process.h
 
 }
 
