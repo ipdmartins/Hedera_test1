@@ -3,25 +3,30 @@ const { Ed25519PrivateKey, AccountCreateTransaction, AccountInfoQuery,
     AccountBalanceQuery } = require("@hashgraph/sdk");
 const { client, operatorAccountId, operatorPrivateKey, operatorPublicKey } = require('./myaccount');
 const frameworkAnalyzer = require("./frameworkAnalyzer");
+const systeminformation = require("./systeminformation");
+const process = require('process'); 
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
-var cpuUsageAtTime = 0;
 
 async function newAccount() {
     const myAccountBalance = await new AccountBalanceQuery()
         .setAccountId(operatorAccountId)
         .execute(client);
 
+    //DELETE IN REAL TEST
     console.log(`MY ACCOUNT ID: ${operatorAccountId}`);
     console.log(`MY ACCOUNT BALANCE: ${myAccountBalance}`);
     console.log(`MY PRIVATE KEY: ${operatorPrivateKey}`);
     console.log(`MY PUBLIC KEY: ${operatorPublicKey}`);
+    //DELETE IN REAL TEST
 
     const newPrivateKey = await Ed25519PrivateKey.generate();
 
+    //DELETE IN REAL TEST
     console.log(`NEW PRIVATE KEY: ${newPrivateKey.toString()}`);
     console.log(`NEW PUBLIC KEY: ${newPrivateKey.publicKey.toString()}`);
+    //DELETE IN REAL TEST
 
     //Creating an account
     const newTransactionId = await new AccountCreateTransaction()
@@ -39,19 +44,24 @@ async function newAccount() {
         .setAccountId(newAccountId)
         .execute(client);
 
+    //DELETE IN REAL TEST
     console.log("NEW ACCOUNT ID: " + newAccountId);
     console.log("NEW ACCOUNT BALANCE: " + newAccountBalance);
+    //DELETE IN REAL TEST
 
     //transfer(newAccountId);
     //updateAccount(newAccountId, newPrivateKey);
 }
 
 async function transfer(receiverAccountId, numberOfTransactions) {
-    // var antes = Date.now();//registra o início do processo de transação
-    // console.log(antes);
+    ///////// referent to analyzeTPC  /////////
+    var starCpuUsage = process.cpuUsage()
+    ///////// referent to analyzeTPC  /////////
+
+    const before = Date.now();//get the transaction beginning for analyzeTPS
 
     for (let index = 0; index < numberOfTransactions; index++) {
-        var txInput = Date.now();
+        var txInput = Date.now();//it's for analyzeARD
         const receipt = await (await new CryptoTransferTransaction()
             .addSender(operatorAccountId, 100)
             .addRecipient(receiverAccountId, 100)
@@ -62,26 +72,31 @@ async function transfer(receiverAccountId, numberOfTransactions) {
 
         //se a transação foi efetivada, tx confirmadas adiciona 1
         if (receipt.receipt.status == "SUCCESS") {
-            var txConfirmed = Date.now();
-            sumTxInputTxComfirmed += (txConfirmed + txInput)
+            var txConfirmed = Date.now();//it's for analyzeARD
+            sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
             txconfirmedcount++;
             // console.log(txconfirmedcount);
         } else {
-            console.log("fail")
+            console.log(`transaction ${index+1} failed.`)
         }
     }
-    //registra o momento fim da transação
-    var depois = Date.now();//registra o fim do processo de transação
+    const after = Date.now();//get the transaction's end analyzeTPS
+
+    ///////// referent to analyzeTPC  /////////
+    const cpuUsageByTheProcess = process.cpuUsage(starCpuUsage)
+    const coreFrequency = await systeminformation.cpuSingleCoreLog()
+    ///////// referent to analyzeTPC  /////////
+    
     console.log(receipt.conconsensusTimestamp.seconds);
 
-    const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, antes, depois);
+    const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, before, after);
     console.log("Transacoes por segundo: ", TPS);
     
     const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
     console.log("Media do atraso de resposta: ", ARD);
 
     //buscar a frequencia do core (F) e com o netdata buscar o uso da CPU
-    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, F, CPU)
+    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.user)
     console.log("Transacoes por CPU: ", TPC);
 
     //Não sei se é possível achar a memoria usada em blockchain e a memoria virtual real???
@@ -99,6 +114,13 @@ async function transfer(receiverAccountId, numberOfTransactions) {
 
     var startUsage = process.h
 
+}
+
+function secNSec2ms(secNSec) {
+    if (Array.isArray(secNSec)) {
+        return secNSec[0] * 1000 + secNSec[1] / 1000000;
+    }
+    return secNSec / 1000;
 }
 
 async function accountRecords(receiverAccountId, receipt) {

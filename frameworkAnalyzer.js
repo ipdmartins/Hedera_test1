@@ -33,7 +33,7 @@ module.exports = {
 	},
 
 	//Transactions Per CPU
-	analyzeTPC(txconfirmedcount, F, CPU) {
+	analyzeTPC(txconfirmedcount, F, cpuPercent) {
 		/*
 		TPC: Transactions Per Second (txconfirmedcount) during a period of time and F is the frequency 
 		of a single CPU core and CPU(t) is the CPU usage of the blockchain program at t.
@@ -43,7 +43,7 @@ module.exports = {
 		mas não traz o percentual de uso.
 		*/
 		
-		var TPC = txconfirmedcount / (F * CPU);
+		var TPC = txconfirmedcount / (F * cpuPercent);
 
 		return {
 			TPC: TPC
@@ -64,8 +64,10 @@ module.exports = {
 
 	//Transactions Per Disk I/O
 	analyzeTPDIO(txconfirmedcount, DISKR, DISKW) {
-		//where DISKR(t) is the size of the data read from the disk in the
-		//second t and DISKW(t) is the size of the data written into the disk.
+		/*
+		where DISKR(t) is the size of the data read from the disk in the second t and DISKW(t) 
+		is the size of the data written into the disk. Possivel solucao https://systeminformation.io/filesystem.html
+		*/
 
 		var TPDIO = txconfirmedcount / (DISKR + DISKW);
 
@@ -77,7 +79,7 @@ module.exports = {
 	//Transactions Per Network Data
 	analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD) {
 		//where UPLOAD(t) is the size of upstream in the network at t and
-		//DOWNLOAD(t) is the size of downstream.
+		//DOWNLOAD(t) is the size of downstream. Possivel solucao https://systeminformation.io/network.html
 		
 		var TPND = txconfirmedcount / (UPLOAD + DOWNLOAD);
 
