@@ -3,8 +3,9 @@ const { Ed25519PrivateKey, AccountCreateTransaction, AccountInfoQuery,
     AccountBalanceQuery } = require("@hashgraph/sdk");
 const { client, operatorAccountId, operatorPrivateKey, operatorPublicKey } = require('./myaccount');
 const frameworkAnalyzer = require("./frameworkAnalyzer");
-const systeminformation = require("./systeminformation");
+const si = require('systeminformation');
 const process = require('process'); 
+
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
@@ -58,6 +59,16 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     var starCpuUsage = process.cpuUsage()
     ///////// referent to analyzeTPC  /////////
 
+    ///////// referent to analyzeTPND  /////////
+
+    const rawDISKR = raw
+    ///////// referent to analyzeTPND  /////////
+
+    ///////// referent to analyzeTPND  /////////
+    const previousUPLOAD = si.networkStats().then(data => data[0].tx_sec)
+    const previousDOWNLOAD = si.networkStats().then(data => data[0].rx_sec)
+    ///////// referent to analyzeTPND  /////////
+
     const before = Date.now();//get the transaction beginning for analyzeTPS
 
     for (let index = 0; index < numberOfTransactions; index++) {
@@ -84,8 +95,16 @@ async function transfer(receiverAccountId, numberOfTransactions) {
 
     ///////// referent to analyzeTPC  /////////
     const cpuUsageByTheProcess = process.cpuUsage(starCpuUsage)
-    const coreFrequency = await systeminformation.cpuSingleCoreLog()
+    const coreFrequency = await si.cpuCurrentspeed().then(data => data.cores[0]);
     ///////// referent to analyzeTPC  /////////
+    
+    ///////// referent to analyzeTPND  /////////
+    const postUPLOAD = si.networkStats().then(data => data[0].tx_sec)
+    const postDOWNLOAD = si.networkStats().then(data => data[0].rx_sec)
+
+    const UPLOAD = postUPLOAD - previousUPLOAD;
+    const DOWNLOAD = postDOWNLOAD - previousDOWNLOAD;
+    ///////// referent to analyzeTPND  /////////
     
     console.log(receipt.conconsensusTimestamp.seconds);
 
@@ -112,15 +131,6 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)
     console.log("Transacoes de dados na rede: ", TPND);
 
-    var startUsage = process.h
-
-}
-
-function secNSec2ms(secNSec) {
-    if (Array.isArray(secNSec)) {
-        return secNSec[0] * 1000 + secNSec[1] / 1000000;
-    }
-    return secNSec / 1000;
 }
 
 async function accountRecords(receiverAccountId, receipt) {
