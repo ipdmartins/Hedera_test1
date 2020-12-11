@@ -4,12 +4,16 @@ const { Ed25519PrivateKey, AccountCreateTransaction, AccountInfoQuery,
 const si = require('systeminformation');
 const process = require('process');
 
-const { client, operatorAccountId, operatorPrivateKey, operatorPublicKey } = require('./myaccount');
+const { myaccount, testerAccount } = require('./myaccount');
 const frameworkAnalyzer = require("./frameworkAnalyzer");
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
-var receipt = null;
+
+// newAccount();
+console.log('OPERATOR ACCOUNT ID: '+myaccount.operatorAccountId);
+console.log('TESTER ACCOUNT ID: '+testerAccount.testerAccountId);
+transfer(testerAccount.testerAccountId, 2);
 
 async function newAccount() {
     const myAccountBalance = await new AccountBalanceQuery()
@@ -75,11 +79,11 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     for (let index = 0; index < numberOfTransactions; index++) {
         var txInput = Date.now();//it's for analyzeARD
         const transation = await (await new CryptoTransferTransaction()
-            .addSender(operatorAccountId, 100)
-            .addRecipient(receiverAccountId, 100)
+            .addSender(myaccount.operatorAccountId, 111)
+            .addRecipient(receiverAccountId, 111)
             .setTransactionMemo("sdk example")
-            .execute(client))
-            .getReceipt(client)
+            .execute(myaccount.client))
+            .getReceipt(myaccount.client)
         // .getRecord(client)
 
         //se a transação foi efetivada, tx confirmadas adiciona 1
@@ -92,7 +96,7 @@ async function transfer(receiverAccountId, numberOfTransactions) {
             console.log(`transaction ${index + 1} failed.`)
         }
         if(index == numberOfTransactions){
-            receipt = await transation.getReceipt(client);
+            receipt = await transation.getReceipt(myaccount.client);
         }
     }
     const after = Date.now();//get the transaction's end analyzeTPS
@@ -147,26 +151,26 @@ async function transfer(receiverAccountId, numberOfTransactions) {
 
 async function accountRecords(receiverAccountId, receipt) {
     const myNewAccountBalance = await new AccountBalanceQuery()
-        .setAccountId(operatorAccountId)
-        .execute(client);
+        .setAccountId(myaccount.operatorAccountId)
+        .execute(myaccount.client);
 
     const receiverNewAccountBalance = await new AccountBalanceQuery()
         .setAccountId(receiverAccountId)
-        .execute(client);
+        .execute(myaccount.client);
 
     console.log("SENDER'S BALANCE AFTER TRANSFER: ", myNewAccountBalance);
     console.log("RECEIVER'S BALANCE AFTER TRANSFER: ", receiverNewAccountBalance);
     console.log("TRANSACTION RECEIPT: ", receipt);
 
     const info = await new AccountInfoQuery()
-        .setAccountId(operatorAccountId)
-        .execute(client);
+        .setAccountId(myaccount.operatorAccountId)
+        .execute(myaccount.client);
 
-    console.log(`OPERATOR ACCOUNT (${operatorAccountId}) INFO QUERY = ${JSON.stringify(info, null, 4)}`);
+    console.log(`OPERATOR ACCOUNT (${myaccount.operatorAccountId}) INFO QUERY = ${JSON.stringify(info, null, 4)}`);
 
     const infoII = await new AccountInfoQuery()
         .setAccountId(receiverAccountId)
-        .execute(client);
+        .execute(myaccount.client);
 
     console.log(`NEW OPERATOR ACCOUNT (${receiverAccountId}) INFO QUERY = ${JSON.stringify(infoII, null, 4)}`);
 
@@ -205,5 +209,3 @@ async function updateAccount(newAccountId, privateKey) {
 
     transfer(newAccountId);
 }
-
-newAccount();

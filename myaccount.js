@@ -3,6 +3,7 @@
 const { Client, AccountBalanceQuery } = require("@hashgraph/sdk");
 require("dotenv").config();
 
+
 // Grab your account ID and private key from the .env file
 const operatorAccountId = process.env.OPERATOR_ID;
 const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
@@ -26,4 +27,24 @@ const myaccount = {
     client
 }
 
-module.exports = myaccount;
+const testerAccountId = process.env.TESTER_ID;
+const testerPrivateKey = process.env.TESTER_PRIVATEKEY;
+const testerPublicKey = process.env.TESTER_PUBLICKEY;
+
+if (testerPrivateKey == null || testerAccountId == null) {
+    throw new Error("environment variables TESTER_KEY and TESTER_ID must be present");
+}
+
+const testClient = Client.forTestnet();
+
+testClient.setOperator(testerAccountId, testerPrivateKey);
+
+const testerAccount = {
+    testerAccountId,
+    testerPrivateKey,
+    testerPublicKey,
+    testClient
+}
+
+
+module.exports = {myaccount, testerAccount};
