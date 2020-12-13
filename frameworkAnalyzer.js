@@ -2,11 +2,10 @@
 
 module.exports = {
 
-	//Transactions Per Second
+	//Transactions Per Second (OK, implemented and working)
 	analyzeTPS(txconfirmedcount, starttime, endtime) {
-		//TPS = Transactions Per Second (txconfirmedcount) During 
-		//in a period of time from ti (starttime) to tj (endtime)
-
+		//TPS = During a period of time from ti to tj , Transactions Per Second of peer
+		//we abbreviate transaction as Tx.
 		var time_defined = false;
 
 		if (starttime != 0 && endtime != 0) {
@@ -20,10 +19,11 @@ module.exports = {
 		}
 	},
 
-	//Average Response Delay
+	//Average Response Delay (OK, implemented and working)
 	analyzeARD(sumTxInputTxComfirmed, txconfirmedcount) {
-		//ARD: Transactions Per Second (txconfirmedcount) during a period of time
-		//divided by each transaction sent - each confirmed (sumTxInputTxComfirmed)
+		//ARD: During a period of time from ti to tj, the action of each transaction
+		//firstly sent to the peer is marked as Txinput and the action when Tx is confirmed 
+		//is marked as Txconfirmed (sumTxInputTxComfirmed). Number of transactions confirmed is txconfirmedcount
 
 		var ARD = sumTxInputTxComfirmed/txconfirmedcount;
 
@@ -32,10 +32,10 @@ module.exports = {
 		}
 	},
 
-	//Transactions Per CPU
+	//Transactions Per CPU (OK, implemented and working)
 	analyzeTPC(txconfirmedcount, F, cpuPercent) {
 		/*
-		TPC: Transactions Per Second (txconfirmedcount) during a period of time and F is the frequency 
+		TPC: Transactions Per CPU during a period of time from ti to tj (txconfirmedcount), where F is the frequency 
 		of a single CPU core and CPU(t) is the CPU usage of the blockchain program at t.
 		A velocidade é medida de gigahertz (GHz), e representa um único núcleo do processador. Caso o 
 		processador tenha múltiplos núcleos (como a maioria deles), cada um dele terá essa mesma velocidade.
@@ -52,8 +52,8 @@ module.exports = {
 
 	//Transactions Per Memory Second
 	analyzeTPMS(txconfirmedcount, RMEM, VMEM) {
-		//where RMEM(t) is the real memory used by the blockchain program
-		//at t and VMEM(t) is the virtual memory of it
+		//During a period of time from ti to tj (txconfirmedcount), where RMEM(t) is the real memory used 
+		//by the blockchain program at t and VMEM(t) is the virtual memory of it
 		
 		var TPMS = txconfirmedcount / (RMEM +VMEM);
 
