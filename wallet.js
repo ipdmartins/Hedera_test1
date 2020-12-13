@@ -13,6 +13,7 @@ var sumTxInputTxComfirmed = 0;
 // newAccount();
 console.log('OPERATOR ACCOUNT ID: '+myaccount.operatorAccountId);
 console.log('TESTER ACCOUNT ID: '+testerAccount.testerAccountId);
+
 transfer(testerAccount.testerAccountId, 2);
 
 async function newAccount() {

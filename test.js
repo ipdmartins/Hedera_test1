@@ -4,6 +4,7 @@ const si = require('systeminformation');
 const Uriel = require('uriel');
 const config = require('./config')
 const process = require('process');
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 async function main(){
   const starCpuUsage = await process.cpuUsage()
@@ -15,12 +16,24 @@ async function main(){
 
 }
 
-setInterval(function() {
-  si.networkStats().then(data => {
-    console.log(data);
+var data = null;
 
-  })
-}, 20000)
+var xhr = new XMLHttpRequest();
+
+xhr.addEventListener("readystatechange", function () {
+  if (this.readyState === this.DONE) {
+    const data = this.responseText
+    console.log(this.responseText);
+    console.log(data.id);
+  }
+});
+
+xhr.open("GET", "https://api.testnet.kabuto.sh/v1/transaction/bc3acda19d79aef2f8da592e312a0642850b93bb50d5ee6423546de0a654809d563b4aa6b5ae4b34284c85f5d0286c14");
+xhr.setRequestHeader("accept", "application/json");
+
+xhr.send(data);
+
+
   // Create a new agent
   // let statsd = new Uriel(config);
  
