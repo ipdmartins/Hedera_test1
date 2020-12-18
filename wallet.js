@@ -73,6 +73,13 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     console.log('previousUPLOAD: '+ previousUPLOAD);
     console.log('previousDOWNLOAD: '+ previousDOWNLOAD);
     ///////// referent to analyzeTPND  /////////
+    
+    ///////// referent to analyzeTPDIO  /////////
+    const processFS = process.resourceUsage();
+    console.log('processFS: '+ processFS);
+    console.log('previousREAD: '+ processFS.fsRead);
+    console.log('previousWRITE: '+ processFS.fsWrite);
+    ///////// referent to analyzeTPDIO  /////////
 
     const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
     const before = milibefore / 1000;//converting milisec to seconds
@@ -118,6 +125,13 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     console.log('cpuUsageByTheProcess: '+ cpuUsageByTheProcess.user);
     console.log('coreFrequency: '+ coreFrequency);
     ///////// referent to analyzeTPC  /////////
+
+
+    const processFSII = process.resourceUsage();
+    console.log('processFS: '+ processFSII);
+    console.log('previousREAD: '+ processFSII.fsRead);
+    console.log('previousWRITE: '+ processFSII.fsWrite);
+
 
     ///////// referent to analyzeTPND  /////////
     const postUPLOAD = await si.networkStats().then(data => data[0].tx_sec)

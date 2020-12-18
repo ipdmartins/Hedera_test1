@@ -19,11 +19,7 @@ async function main(){
   console.log(transactions);
 }
 
-setInterval(function() {
-  si.networkStats().then(data => {
-    console.log(data);
-  })
-}, 2000)
+console.log(Date.parse(10));
 
 // var data = null;
 
