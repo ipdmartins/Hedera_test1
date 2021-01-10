@@ -19,7 +19,13 @@ async function main(){
   console.log(transactions);
 }
 
-console.log(Date.parse(10));
+setInterval(function() {
+  si.currentLoad().then(data => {
+      console.log(data);
+  })
+}, 2000)
+
+
 
 // var data = null;
 

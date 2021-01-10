@@ -62,7 +62,7 @@ module.exports = {
 		}
 	},
 
-	//Transactions Per Disk I/O
+	//Transactions Per Disk I/O (OK, implemented and working)
 	analyzeTPDIO(txconfirmedcount, DISKR, DISKW) {
 		/*
 		where DISKR(t) is the size of the data read from the disk in the second t and DISKW(t) 
@@ -76,7 +76,7 @@ module.exports = {
 		}
 	},
 	
-	//Transactions Per Network Data
+	//Transactions Per Network Data (OK, implemented and working)
 	analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD) {
 		//where UPLOAD(t) is the size of upstream in the network at t and
 		//DOWNLOAD(t) is the size of downstream. Possivel solucao https://systeminformation.io/network.html

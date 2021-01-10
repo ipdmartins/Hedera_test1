@@ -68,17 +68,20 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     ///////// referent to analyzeTPC  /////////
 
     ///////// referent to analyzeTPND  /////////
-    const previousUPLOAD = await si.networkStats().then(data => data[0].tx_sec)
-    const previousDOWNLOAD = await si.networkStats().then(data => data[0].rx_sec)
+    const dataPreviousNet = await si.networkStats().then(data => {return data;})
+    const previousUPLOAD = dataPreviousNet[0].tx_bytes;
+    const previousDOWNLOAD = dataPreviousNet[0].rx_bytes;
     console.log('previousUPLOAD: '+ previousUPLOAD);
     console.log('previousDOWNLOAD: '+ previousDOWNLOAD);
     ///////// referent to analyzeTPND  /////////
     
+
     ///////// referent to analyzeTPDIO  /////////
-    const processFS = process.resourceUsage();
-    console.log('processFS: '+ processFS);
-    console.log('previousREAD: '+ processFS.fsRead);
-    console.log('previousWRITE: '+ processFS.fsWrite);
+    const dataPreviousIO = await si.disksIO().then(data => {
+        return data;
+      })
+    console.log('previousREAD: '+ dataPreviousIO.rIO);
+    console.log('previousWRITE: '+ dataPreviousIO.wIO)
     ///////// referent to analyzeTPDIO  /////////
 
     const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
@@ -89,7 +92,7 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     var receipt = null;
     for (let index = 0; index < numberOfTransactions; index++) {
         var txInput = Date.now() / 1000;//it's for analyzeARD
-        const transation = await (await new CryptoTransferTransaction()
+        const transation = (await new CryptoTransferTransaction()
             .addSender(myaccount.operatorAccountId, 111)
             .addRecipient(receiverAccountId, 111)
             // .setTransactionMemo("sdk example")
@@ -128,14 +131,15 @@ async function transfer(receiverAccountId, numberOfTransactions) {
 
 
     const processFSII = process.resourceUsage();
-    console.log('processFS: '+ processFSII);
-    console.log('previousREAD: '+ processFSII.fsRead);
-    console.log('previousWRITE: '+ processFSII.fsWrite);
+    console.log('postREAD: '+ processFSII.fsRead);
+    console.log('postWRITE: '+ processFSII.fsWrite);
 
 
     ///////// referent to analyzeTPND  /////////
-    const postUPLOAD = await si.networkStats().then(data => data[0].tx_sec)
-    const postDOWNLOAD = await si.networkStats().then(data => data[0].rx_sec)
+    const dataPostNet = await si.networkStats().then(data => {return data;})
+    const postUPLOAD = dataPostNet[0].tx_bytes;
+    const postDOWNLOAD = dataPostNet[0].rx_bytes;
+
     console.log('postUPLOAD: '+ postUPLOAD);
     console.log('postDOWNLOAD: '+ postDOWNLOAD);
 
@@ -144,6 +148,27 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     console.log('UPLOAD: '+ UPLOAD);
     console.log('DOWNLOAD: '+ DOWNLOAD);
     ///////// referent to analyzeTPND  /////////
+
+    ///////// referent to analyzeTPMS  /////////
+    const dataPostMem = await si.processes().then(data => {
+        return data;
+    })
+    const RMEM = dataPostMem.list[0].mem_rss;
+    const VMEM = dataPostMem.list[0].mem_vsz;
+
+    console.log('postMem: '+ RMEM);
+    console.log('postVirtualMem: '+ VMEM)
+    ///////// referent to analyzeTPMS  /////////
+
+    ///////// referent to analyzeTPDIO  /////////
+    const dataPostIO = await si.disksIO().then(data => {
+        return data;
+      })
+    console.log('postREAD: '+ dataPostIO.rIO);
+    console.log('postWRITE: '+ dataPostIO.wIO)
+    const DISKR = dataPostIO.rIO - dataPreviousIO.rIO;
+    const DISKW = dataPostIO.wIO - dataPreviousIO.wIO;
+    ///////// referent to analyzeTPDIO  /////////
 
     // console.log(receipt.conconsensusTimestamp.seconds);
 
@@ -159,13 +184,12 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     console.log("Transactions Per CPU txs/(GHZ) in seconds: ", TPC);
 
     //Não sei se é possível achar a memoria usada em blockchain e a memoria virtual real???
-    //investigar o Kabuto
-    // const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
-    // console.log("Transacoes de memoria por segundo: ", TPMS);
+    const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
+    console.log("Transacoes de memoria por segundo: ", TPMS);
 
-    //buscar DISKR e o DISKW com o netdata????????
-    // const TPDIO = frameworkAnalyzer.analyzeTPDIO(txconfirmedcount, DISKR, DISKW)
-    // console.log("Transacoes por disco: ", TPDIO);
+    // buscar DISKR e o DISKW com o netdata????????
+    const TPDIO = frameworkAnalyzer.analyzeTPDIO(txconfirmedcount, DISKR, DISKW)
+    console.log("Transacoes por disco: ", TPDIO);
 
     //buscar UPLOAD e o DOWNLOAD com o netdata
     const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)

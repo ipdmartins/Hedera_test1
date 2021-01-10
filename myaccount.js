@@ -3,7 +3,6 @@
 const { Client, AccountBalanceQuery } = require("@hashgraph/sdk");
 require("dotenv").config();
 
-
 // Grab your account ID and private key from the .env file
 const operatorAccountId = process.env.OPERATOR_ID;
 const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
