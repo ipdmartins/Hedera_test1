@@ -50,7 +50,7 @@ module.exports = {
 		}
 	},
 
-	//Transactions Per Memory Second
+	//Transactions Per Memory Second (OK, implemented and working)
 	analyzeTPMS(txconfirmedcount, RMEM, VMEM) {
 		//During a period of time from ti to tj (txconfirmedcount), where RMEM(t) is the real memory used 
 		//by the blockchain program at t and VMEM(t) is the virtual memory of it
