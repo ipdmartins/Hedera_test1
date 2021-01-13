@@ -6,13 +6,10 @@ module.exports = {
 	analyzeTPS(txconfirmedcount, starttime, endtime) {
 		//TPS = During a period of time from ti to tj , Transactions Per Second of peer
 		//we abbreviate transaction as Tx.
-		var time_defined = false;
 
 		if (starttime != 0 && endtime != 0) {
-			time_defined = true;
+			var TPS = txconfirmedcount / (endtime - starttime);
 		}
-
-		var TPS = txconfirmedcount / (endtime - starttime);
 
 		return {
 			TPS: TPS
@@ -55,7 +52,7 @@ module.exports = {
 		//During a period of time from ti to tj (txconfirmedcount), where RMEM(t) is the real memory used 
 		//by the blockchain program at t and VMEM(t) is the virtual memory of it
 		
-		var TPMS = txconfirmedcount / (RMEM +VMEM);
+		var TPMS = txconfirmedcount / (RMEM + VMEM);
 
 		return {
 			TPMS: TPMS

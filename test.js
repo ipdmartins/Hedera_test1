@@ -19,11 +19,12 @@ async function main(){
   console.log(transactions);
 }
 
-setInterval(function() {
-  si.currentLoad().then(data => {
-      console.log(data);
-  })
-}, 2000)
+var array = [];
+
+for (let index = 0; index < 5; index++) {
+  array.push(index+1);
+}
+console.log(array[1])
 
 
 
