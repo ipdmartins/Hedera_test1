@@ -3,12 +3,13 @@
 module.exports = {
 
 	//Transactions Per Second (OK, implemented and working)
-	analyzeTPS(txconfirmedcount, starttime, endtime) {
+	analyzeTPS(txconfirmedcount, milibefore, miliafter) {
 		//TPS = During a period of time from ti to tj , Transactions Per Second of peer
 		//we abbreviate transaction as Tx.
-
-		if (starttime != 0 && endtime != 0) {
-			var TPS = txconfirmedcount / (endtime - starttime);
+		if (milibefore != 0 && miliafter != 0) {
+			const startTimeSeconds = milibefore / 1000;
+			const endTimeSeconds = miliafter / 1000;
+			var TPS = txconfirmedcount / (endTimeSeconds - startTimeSeconds);
 		}
 
 		return {
@@ -22,7 +23,7 @@ module.exports = {
 		//firstly sent to the peer is marked as Txinput and the action when Tx is confirmed 
 		//is marked as Txconfirmed (sumTxInputTxComfirmed). Number of transactions confirmed is txconfirmedcount
 
-		var ARD = sumTxInputTxComfirmed/txconfirmedcount;
+		var ARD = (sumTxInputTxComfirmed / 1000) /txconfirmedcount;
 
 		return {
 			ARD: ARD

@@ -14,18 +14,17 @@ async function main(){
   // console.log('cpuUsageByTheProcess: '+ cpuUsageByTheProcess.user);
   // console.log('cpuUsageByTheProcess user: '+ cpuUsageByTheProcess.user);
 
-  const resp = await fetch("https://api.testnet.kabuto.sh/v1/transaction/bc3acda19d79aef2f8da592e312a0642850b93bb50d5ee6423546de0a654809d563b4aa6b5ae4b34284c85f5d0286c14");
-  const transactions = await resp.json();
-  console.log(transactions);
+  const cpuUsageByTheProcess = await processLoad('nginx').then(data => {
+    return data;
+  })
+  console.log(cpuUsageByTheProcess)
 }
 
-var array = [];
-
-for (let index = 0; index < 5; index++) {
-  array.push(index+1);
-}
-console.log(array[1])
-
+setInterval(function() {
+  si.currentLoad().then(data => {
+      console.log(data.raw_currentload_user);
+  })
+}, 2000)
 
 
 // var data = null;

@@ -1,5 +1,5 @@
 const { Ed25519PrivateKey, AccountCreateTransaction, AccountInfoQuery,
-    AccountUpdateTransaction, CryptoTransferTransaction,
+    AccountUpdateTransaction, TransferTransaction,
     AccountBalanceQuery } = require("@hashgraph/sdk");
 const si = require('systeminformation');
 const process = require('process');
@@ -14,9 +14,7 @@ var readData = [];
 var writeData = [];
 var downloadData = [];
 var uploadData = [];
-var secTimeData = [];
-var txInputData = [];
-var txConfirmedData = [];
+var miliTimeData = [];
 
 // transfer(testerAccount.testerAccountId, 1000);
 newAccount(myaccount.operatorAccountId, myaccount.client);
@@ -27,11 +25,11 @@ async function newAccount(operatorAccountId, client) {
         .execute(client);
 
     //DELETE IN REAL TEST
-    console.log(`MY ACCOUNT BALANCE: ${myAccountBalance}`);
+    console.log(`MY ACCOUNT BALANCE BEFORE TRANSFER:: ${myAccountBalance}`);
     //DELETE IN REAL TEST
 
     const newPrivateKey = await Ed25519PrivateKey.generate();
-
+    
     //Creating an account
     const newTransactionId = await new AccountCreateTransaction()
         .setKey(newPrivateKey.publicKey)
@@ -47,24 +45,28 @@ async function newAccount(operatorAccountId, client) {
         .execute(client);
 
     //DELETE IN REAL TEST
-    console.log("NEW CREATED ACCOUNT BALANCE : " + newAccountBalance);
+    console.log("CLIENT ACCOUNT BALANCE BEFORE TRANSFER: " + newAccountBalance);
     //DELETE IN REAL TEST
-
-    transfer(newAccountId, 5);
+    
+    transfer(operatorAccountId, client, newAccountId, 5);
     //updateAccount(newAccountId, newPrivateKey);
 }
 
-async function transfer(receiverAccountId, numberOfTransactions) {
+async function transfer(operatorAccountId, client, receiverAccountId, numberOfTransactions) {
     ///////// referent to analyzeTPC  /////////
-    var starCpuUsage = process.cpuUsage()
-    cpuData.push(starCpuUsage.user);
-    // console.log('starCpuUsage: '+ starCpuUsage.user);
+    const startCpuUsage = await si.currentLoad().then(data => {
+        return data;
+    })
+
+    // cpuData.push(startCpuUsage.user);
+    // console.log('startCpuUsage: '+ startCpuUsage.user);
     ///////// referent to analyzeTPC  /////////
 
     ///////// referent to analyzeTPDIO  /////////
     const dataPreviousIO = await si.disksIO().then(data => {
         return data;
       })
+    
     readData.push(dataPreviousIO.rIO);
     writeData.push(dataPreviousIO.wIO);
     // console.log('previousREAD: '+ dataPreviousIO.rIO);
@@ -82,30 +84,35 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     ///////// referent to analyzeTPND  /////////
     
     const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
-    const before = milibefore / 1000;//converting milisec to seconds
-    secTimeData.push(before);
-    // console.log('Time before per sec: '+ before);
-
+    // const before = milibefore / 1000;//converting milisec to seconds
+    miliTimeData.push(milibefore);
+    
     // var calc = 0;
     var receipt = null;
     for (let index = 0; index < numberOfTransactions; index++) {
-        var txInput = Date.now() / 1000;//it's for analyzeARD
-        const transation = (await new CryptoTransferTransaction()
-            .addSender(myaccount.operatorAccountId, 111)
-            .addRecipient(receiverAccountId, 111)
-            // .setTransactionMemo("sdk example")
-            .execute(myaccount.client))
-            // .getReceipt(myaccount.client)
+        var txInput = Date.now();//it's for analyzeARD
+
+        const transaction = await new TransferTransaction()
+        .addHbarTransfer(operatorAccountId, -144)
+        .addHbarTransfer(receiverAccountId, 144)
+        .execute(client);
+
+        // const transation = (await new CryptoTransferTransaction()
+        //     .addSender(myaccount.operatorAccountId, 55)
+        //     .addRecipient(receiverAccountId, 55)
+        //     .setTransactionMemo("sdk example")
+        //     .execute(myaccount.client))
+        //     .getReceipt(myaccount.client)
         // .getRecord(client)
 
-        const transactionReceipt = await transation.getReceipt(myaccount.client);
+        const transactionReceipt = await transaction.getReceipt(client);
         
         //se a transação foi efetivada, tx confirmadas adiciona 1
         if (transactionReceipt.status == "SUCCESS") {
             //getting consensus timestamp on blockchain in seconds for analyzeARD
             // var time = Date.now() / 1000;
             // var txConfirmed = (await transation.getRecord(myaccount.client)).consensusTimestamp.seconds;
-            var txConfirmed = Date.now() / 1000;
+            var txConfirmed = Date.now();
             sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
             // console.log('txConfirmed: '+txConfirmed+', txInput: '+txInput+', sumTxInputTxComfirmed: '+sumTxInputTxComfirmed);
             // calc += (time - txInput)//it's monitore what's going on analyzeARD
@@ -117,18 +124,19 @@ async function transfer(receiverAccountId, numberOfTransactions) {
         }
     }
     const miliafter = Date.now();//get the transaction's end in millicsec for analyzeTPS
-    const after = miliafter / 1000;//converting milisec to seconds
-    secTimeData.push(after);
+    // const after = miliafter / 1000;//converting milisec to seconds
+    miliTimeData.push(miliafter);
     // console.log('Time after per sec: '+ after);
     
-
-    //PAREI AQUI
     ///////// referent to analyzeTPC  /////////
-    const cpuUsageByTheProcess = process.cpuUsage(starCpuUsage)
+    const cpuUsageByTheProcess = await si.currentLoad().then(data => {
+        return data;
+    })
     const coreFrequency = await si.cpuCurrentspeed().then(data => data.cores[0]);
-    cpuData.push(starCpuUsage.user);
-    console.log('cpuUsageByTheProcess: '+ cpuUsageByTheProcess.user);
-    console.log('coreFrequency: '+ coreFrequency);
+
+    cpuData.push(cpuUsageByTheProcess.user);
+    // console.log('cpuUsageByTheProcess: '+ cpuUsageByTheProcess.user);
+    // console.log('coreFrequency: '+ coreFrequency);
     ///////// referent to analyzeTPC  /////////
 
     ///////// referent to analyzeTPMS  /////////
@@ -138,22 +146,26 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     const RMEM = dataPostMem.list[0].mem_rss;
     const VMEM = dataPostMem.list[0].mem_vsz;
 
-    console.log('postMem: '+ RMEM);
-    console.log('postVirtualMem: '+ VMEM)
+    // console.log('postMem: '+ RMEM);
+    // console.log('postVirtualMem: '+ VMEM)
     ///////// referent to analyzeTPMS  /////////
     
     ///////// referent to analyzeTPDIO  /////////
     const dataPostIO = await si.disksIO().then(data => {
         return data;
       })
-    console.log('postREAD: '+ dataPostIO.rIO);
-    console.log('postWRITE: '+ dataPostIO.wIO)
+
+    readData.push(dataPostIO.rIO);
+    writeData.push(dataPostIO.wIO);
+
+    // console.log('postREAD: '+ dataPostIO.rIO);
+    // console.log('postWRITE: '+ dataPostIO.wIO);
     const DISKR = dataPostIO.rIO - dataPreviousIO.rIO;
     const DISKW = dataPostIO.wIO - dataPreviousIO.wIO;
 
-    const processFSII = process.resourceUsage();
-    console.log('process.resourceUsage postREAD: '+ processFSII.fsRead);
-    console.log('process.resourceUsage postWRITE: '+ processFSII.fsWrite);
+    // const processFSII = process.resourceUsage();
+    // console.log('process.resourceUsage postREAD: '+ processFSII.fsRead);
+    // console.log('process.resourceUsage postWRITE: '+ processFSII.fsWrite);
     ///////// referent to analyzeTPDIO  /////////    
 
     ///////// referent to analyzeTPND  /////////
@@ -161,34 +173,56 @@ async function transfer(receiverAccountId, numberOfTransactions) {
     const postUPLOAD = dataPostNet[0].tx_bytes;
     const postDOWNLOAD = dataPostNet[0].rx_bytes;
 
-    console.log('postUPLOAD: '+ postUPLOAD);
-    console.log('postDOWNLOAD: '+ postDOWNLOAD);
+    downloadData.push(postDOWNLOAD);
+    uploadData.push(postUPLOAD);
+
 
     const UPLOAD = postUPLOAD - previousUPLOAD;
     const DOWNLOAD = postDOWNLOAD - previousDOWNLOAD;
-    console.log('UPLOAD: '+ UPLOAD);
-    console.log('DOWNLOAD: '+ DOWNLOAD);
+    // console.log('UPLOAD: '+ UPLOAD);
+    // console.log('DOWNLOAD: '+ DOWNLOAD);
     ///////// referent to analyzeTPND  /////////
 
     // console.log(receipt.conconsensusTimestamp.seconds);
 
-    const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, before, after);
-    console.log("Transactions per second (TPS): ", TPS);
+    const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, milibefore, miliafter);
+    console.log("Transactions per second (txs/s): ", TPS);
 
     const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
-    console.log("Average Response Delay in seconds (ARD): ", ARD);
+    console.log("Average Response Delay in seconds (txs/s): ", ARD);
 
-    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.user)
-    console.log("Transactions Per CPU txs/(GHZ) in seconds (TPC): ", TPC);
+    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.raw_currentload_user)
+    console.log("Transactions Per CPU in seconds (txs/(GHz · s)): ", TPC);
 
     const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
-    console.log("Transacoes de memoria por segundo (TPMS): ", TPMS);
+    console.log("Transacoes de memoria por segundo (txs/(MB · s)): ", TPMS);
 
     const TPDIO = frameworkAnalyzer.analyzeTPDIO(txconfirmedcount, DISKR, DISKW)
-    console.log("Transacoes por disco (TPDIO): ", TPDIO);
+    console.log("Transacoes por disco (txs/kilobytes): ", TPDIO);
 
     const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)
-    console.log("Transacoes de dados na rede (TPND): ", TPND);
+    console.log("Transacoes de dados na rede (txs/kilobytes): ", TPND);
+
+    ////////// LOGS /////////
+
+    console.log('Transactions confirmed from t(i) to t(j): '+ txconfirmedcount);
+    console.log('MilliTime before transaction: '+ milibefore);
+    console.log('MilliTime after transaction: '+ miliafter);
+    console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: '+ sumTxInputTxComfirmed);
+    console.log('Measured single core: '+ coreFrequency);
+    console.log('Measured CPU user raw current load transaction: '+ cpuUsageByTheProcess.raw_currentload_user);
+    console.log('Measured process real memory resident set size after transaction: '+ RMEM);
+    console.log('Measured process virtual memory size after transaction: '+ VMEM);
+    console.log('Measured data read IOs on all mounted drives before transaction: '+ dataPreviousIO.rIO);
+    console.log('Measured data read read IOs on all mounted drives after transaction: '+ dataPostIO.rIO);
+    console.log('Measured data written IOs on all mounted drives before transaction: '+ dataPreviousIO.wIO);
+    console.log('Measured data written IOs on all mounted drives after transaction: '+ dataPostIO.wIO);
+    console.log('Measured transferred bytes overall (upload) before transacion: '+ previousUPLOAD);
+    console.log('Measured transferred bytes overall (upload) after transacion: '+ postUPLOAD);
+    console.log('Measured received bytes overall (download) before transacion: '+ previousDOWNLOAD);
+    console.log('Measured received bytes overall (download) after transacion: '+ postDOWNLOAD);
+    
+    ////////// LOGS /////////
 
     accountRecords(receiverAccountId, receipt)
 }
@@ -202,8 +236,8 @@ async function accountRecords(receiverAccountId, senderClient, receiverClient) {
         .setAccountId(receiverAccountId)
         .execute(myaccount.client);
 
-    console.log("SENDER'S BALANCE AFTER TRANSFER: ", myNewAccountBalance);
-    console.log("RECEIVER'S BALANCE AFTER TRANSFER: ", receiverNewAccountBalance);
+    console.log("MY ACCOUNT BALANCE AFTER TRANSFER: ", myNewAccountBalance);
+    console.log("CLIENT ACCOUNT BALANCE AFTER TRANSFER: ", receiverNewAccountBalance);
 }
 
 async function updateAccount(newAccountId, privateKey) {
