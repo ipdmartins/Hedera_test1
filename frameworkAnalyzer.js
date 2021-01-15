@@ -64,7 +64,7 @@ module.exports = {
 	analyzeTPDIO(txconfirmedcount, DISKR, DISKW) {
 		/*
 		where DISKR(t) is the size of the data read from the disk in the second t and DISKW(t) 
-		is the size of the data written into the disk. Possivel solucao https://systeminformation.io/filesystem.html
+		is the size of the data written into the disk.
 		*/
 
 		var TPDIO = txconfirmedcount / (DISKR + DISKW);
@@ -77,7 +77,7 @@ module.exports = {
 	//Transactions Per Network Data (OK, implemented and working)
 	analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD) {
 		//where UPLOAD(t) is the size of upstream in the network at t and
-		//DOWNLOAD(t) is the size of downstream. Possivel solucao https://systeminformation.io/network.html
+		//DOWNLOAD(t) is the size of downstream. 
 		
 		var TPND = txconfirmedcount / (UPLOAD + DOWNLOAD);
 
