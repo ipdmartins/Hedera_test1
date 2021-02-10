@@ -1,5 +1,5 @@
-const { Ed25519PrivateKey, AccountCreateTransaction, TransferTransaction,
-    AccountBalanceQuery } = require("@hashgraph/sdk");
+const { Client, ConsensusTopicCreateTransaction, Ed25519PrivateKey, Ed25519PublicKey, TopicMessageSubmitTransaction } = require("@hashgraph/sdk");
+require("dotenv").config();
 const si = require('systeminformation');
 var process = require('process');
 
@@ -9,28 +9,28 @@ const frameworkAnalyzer = require("./frameworkAnalyzer");
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-transfer(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 50);
-// newAccount(myaccount.operatorAccountId, myaccount.client);
+// messenger(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 50);
+getTopicId(myaccount.client);
 
-async function newAccount(operatorAccountId, client) {
+async function getTopicId(client) {
 
-    const newPrivateKey = await Ed25519PrivateKey.generate();
-    
-    //Creating an account
-    const newTransactionId = await new AccountCreateTransaction()
-        .setKey(newPrivateKey.publicKey)
-        .setInitialBalance(100)
+    const submitKey = await Ed25519PrivateKey.generate();
+    const submitPublicKey = submitKey.publicKey;
+
+    const transactionId = await new ConsensusTopicCreateTransaction()
+        .setTopicMemo("UDESC TCC submitting key")
+        .setSubmitKey(submitPublicKey)
         .execute(client);
 
-    const transactionReceipt = await newTransactionId.getReceipt(client);
+    const receipt = await transactionId.getReceipt(client);
+    const topicId = receipt.getConsensusTopicId();
 
-    const newAccountId = transactionReceipt.getAccountId();
-    
-    transfer(operatorAccountId, client, newAccountId, 25);
+    console.log(`Created new topic ${topicId} with ED25519 submitKey of ${submitKey}`)
+
+    messenger(client, 3, topicId);
 }
 
-async function transfer(operatorAccountId, client, receiverAccountId, numberOfTransactions) {
-    accountRecords(operatorAccountId, receiverAccountId, client);
+async function messenger(client, numberOfTransactions, topicId) {
 
     ///////// referent to analyzeTPC  /////////
     const startCpuUsage = await si.currentLoad().then(data => {
@@ -41,15 +41,15 @@ async function transfer(operatorAccountId, client, receiverAccountId, numberOfTr
     ///////// referent to analyzeTPDIO  /////////
     const dataPreviousIO = await si.disksIO().then(data => {
         return data;
-      })
+    })
     ///////// referent to analyzeTPDIO  /////////
 
     ///////// referent to analyzeTPND  /////////
-    const dataPreviousNet = await si.networkStats().then(data => {return data;})
+    const dataPreviousNet = await si.networkStats().then(data => { return data; })
     const previousUPLOAD = dataPreviousNet[0].tx_bytes;
     const previousDOWNLOAD = dataPreviousNet[0].rx_bytes;
     ///////// referent to analyzeTPND  /////////
-    
+
     const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
 
     const previousProcessMemoryUsage = process.memoryUsage().rss;
@@ -57,20 +57,18 @@ async function transfer(operatorAccountId, client, receiverAccountId, numberOfTr
     for (let index = 0; index < numberOfTransactions; index++) {
         var txInput = Date.now();//it's for analyzeARD
 
-        const transaction = await new TransferTransaction()
-        .addHbarTransfer(operatorAccountId, -144)
-        .addHbarTransfer(receiverAccountId, 144)
-        .execute(client);
+        //Submits a message to a public topic 
+        const transactionProccess = transaction(topicId, client)
 
-        const transactionReceipt = await transaction.getReceipt(client);
-        
+        console.log(transactionProccess)
+
         //se a transação foi efetivada, tx confirmadas adiciona 1
-        if (transactionReceipt.status == "SUCCESS") {
+        if (transactionProccess.status == "SUCCESS") {
             //getting consensus timestamp on blockchain in seconds for analyzeARD
             var txConfirmed = Date.now();
-            
+
             sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
-           
+
             txconfirmedcount++;
         } else {
             console.log(`transaction ${index + 1} failed.`)
@@ -95,18 +93,18 @@ async function transfer(operatorAccountId, client, receiverAccountId, numberOfTr
     const RMEM = dataPostMem.list[0].mem_rss;
     const VMEM = dataPostMem.list[0].mem_vsz;
     ///////// referent to analyzeTPMS  /////////
-    
+
     ///////// referent to analyzeTPDIO  /////////
     const dataPostIO = await si.disksIO().then(data => {
         return data;
-      })
+    })
 
     const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO) / 1000;
     const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO) / 1000;
     ///////// referent to analyzeTPDIO  /////////    
 
     ///////// referent to analyzeTPND  /////////
-    const dataPostNet = await si.networkStats().then(data => {return data;})
+    const dataPostNet = await si.networkStats().then(data => { return data; })
     const postUPLOAD = dataPostNet[0].tx_bytes;
     const postDOWNLOAD = dataPostNet[0].rx_bytes;
 
@@ -133,39 +131,52 @@ async function transfer(operatorAccountId, client, receiverAccountId, numberOfTr
     console.log("Transacoes de dados na rede (txs/kilobytes): ", TPND);
 
     ////////// LOGS /////////
-    console.log('Resident Set Size process Node memory usage previous Mebabytes (MB): ', previousProcessMemoryUsage/1000000)
-    console.log('Resident Set Size process Node memory usage post Mebabytes (MB): ', postProcessMemoryUsage/1000000)
-    console.log('Transactions confirmed from t(i) to t(j): '+ txconfirmedcount);
-    console.log('MilliTime before transaction: '+ milibefore);
-    console.log('MilliTime after transaction: '+ miliafter);
-    console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: '+ sumTxInputTxComfirmed);
-    console.log('Measured single core: '+ coreFrequency);
-    console.log('Measured CPU user raw current load transaction: '+ cpuUsageByTheProcess.raw_currentload_user);
-    console.log('Measured process real memory resident set size after transaction: '+ RMEM);
-    console.log('Measured process virtual memory size after transaction: '+ VMEM);
-    console.log('Measured data read IOs on all mounted drives before transaction: '+ dataPreviousIO.rIO);
-    console.log('Measured data read read IOs on all mounted drives after transaction: '+ dataPostIO.rIO);
-    console.log('Measured data written IOs on all mounted drives before transaction: '+ dataPreviousIO.wIO);
-    console.log('Measured data written IOs on all mounted drives after transaction: '+ dataPostIO.wIO);
-    console.log('Measured transferred bytes overall (upload) before transacion: '+ previousUPLOAD);
-    console.log('Measured transferred bytes overall (upload) after transacion: '+ postUPLOAD);
-    console.log('Measured received bytes overall (download) before transacion: '+ previousDOWNLOAD);
-    console.log('Measured received bytes overall (download) after transacion: '+ postDOWNLOAD);
+    // console.log('Resident Set Size process Node memory usage previous Mebabytes (MB): ', previousProcessMemoryUsage / 1000000)
+    // console.log('Resident Set Size process Node memory usage post Mebabytes (MB): ', postProcessMemoryUsage / 1000000)
+    // console.log('Transactions confirmed from t(i) to t(j): ' + txconfirmedcount);
+    // console.log('MilliTime before transaction: ' + milibefore);
+    // console.log('MilliTime after transaction: ' + miliafter);
+    // console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
+    // console.log('Measured single core: ' + coreFrequency);
+    // console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.raw_currentload_user);
+    // console.log('Measured process real memory resident set size after transaction: ' + RMEM);
+    // console.log('Measured process virtual memory size after transaction: ' + VMEM);
+    // console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
+    // console.log('Measured data read read IOs on all mounted drives after transaction: ' + dataPostIO.rIO);
+    // console.log('Measured data written IOs on all mounted drives before transaction: ' + dataPreviousIO.wIO);
+    // console.log('Measured data written IOs on all mounted drives after transaction: ' + dataPostIO.wIO);
+    // console.log('Measured transferred bytes overall (upload) before transacion: ' + previousUPLOAD);
+    // console.log('Measured transferred bytes overall (upload) after transacion: ' + postUPLOAD);
+    // console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
+    // console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
     ////////// LOGS /////////
 
-    accountRecords(operatorAccountId, receiverAccountId, client);
-    
+    // submitRecords(topicId);
+
 }
 
-async function accountRecords(operatorAccountId, receiverAccountId, client) {
-    const myAccountBalance = await new AccountBalanceQuery()
-        .setAccountId(operatorAccountId)
-        .execute(client);
+async function transaction(topicId, client){
+    try {
+        //Create the transaction
+        const transaction = await new TopicMessageSubmitTransaction({
+                topicId: topicId,
+                message: "Hello World",
+            }).execute(client);
+        
 
-    const receiverNewAccountBalance = await new AccountBalanceQuery()
-        .setAccountId(receiverAccountId)
-        .execute(client);
+        return transaction;
+    } catch (error) {
+        console.log('Error transaction message: ' + error)
+    }
+}
 
-    console.log("MY CURRENT ACCOUNT BALANCE: ", myAccountBalance);
-    console.log("CLIENT CURRENT ACCOUNT BALANCE: ", receiverNewAccountBalance);
+async function submitRecords(topicId) {
+    //Create the transaction
+    const transaction = await new TopicMessageSubmitTransaction()
+        .setTopicId(topicId)
+
+    //Get the transactio message
+    const getMessage = transaction.getMessage();
+
+    console.log("MY MESSAGES: ", getMessage);
 }
