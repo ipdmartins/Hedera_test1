@@ -1,5 +1,11 @@
-const { Client, ConsensusTopicCreateTransaction, Ed25519PrivateKey, Ed25519PublicKey, TopicMessageSubmitTransaction } = require("@hashgraph/sdk");
 require("dotenv").config();
+
+const {
+    TopicCreateTransaction,
+    TopicMessageSubmitTransaction,
+    PrivateKey,
+} = require("@hashgraph/sdk");
+
 const si = require('systeminformation');
 var process = require('process');
 
@@ -9,25 +15,31 @@ const frameworkAnalyzer = require("./frameworkAnalyzer");
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
+console.log(myaccount)
+console.log(testerAccount)
+
 // messenger(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 50);
 getTopicId(myaccount.client);
 
 async function getTopicId(client) {
 
-    const submitKey = await Ed25519PrivateKey.generate();
-    const submitPublicKey = submitKey.publicKey;
+    // create topic
+    const createResponse = await new TopicCreateTransaction().execute(client);
+    const createReceipt = await createResponse.getReceipt(client);
+    const topicId = createReceipt.topicId
+    console.log(`topic id = ${topicId}`);
 
-    const transactionId = await new ConsensusTopicCreateTransaction()
-        .setTopicMemo("UDESC TCC submitting key")
-        .setSubmitKey(submitPublicKey)
-        .execute(client);
+    // send one message
+    const sendResponse = await new TopicMessageSubmitTransaction({
+        topicId: topicId,
+        message: "Hello World",
+    }).execute(client);
 
-    const receipt = await transactionId.getReceipt(client);
-    const topicId = receipt.getConsensusTopicId();
+    const sendReceipt = await sendResponse.getReceipt(client);
 
-    console.log(`Created new topic ${topicId} with ED25519 submitKey of ${submitKey}`)
+    console.log(`topic sequence number = ${sendReceipt.topicSequenceNumber}`);
 
-    messenger(client, 3, topicId);
+    // messenger(client, 3, topicId);
 }
 
 async function messenger(client, numberOfTransactions, topicId) {
@@ -155,14 +167,14 @@ async function messenger(client, numberOfTransactions, topicId) {
 
 }
 
-async function transaction(topicId, client){
+async function transaction(topicId, client) {
     try {
         //Create the transaction
         const transaction = await new TopicMessageSubmitTransaction({
-                topicId: topicId,
-                message: "Hello World",
-            }).execute(client);
-        
+            topicId: topicId,
+            message: "Hello World",
+        }).execute(client);
+
 
         return transaction;
     } catch (error) {

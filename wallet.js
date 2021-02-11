@@ -9,7 +9,7 @@ const frameworkAnalyzer = require("./frameworkAnalyzer");
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-transfer(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 50);
+transfer(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 3);
 // newAccount(myaccount.operatorAccountId, myaccount.client);
 
 async function newAccount(operatorAccountId, client) {

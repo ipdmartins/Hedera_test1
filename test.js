@@ -1,20 +1,18 @@
-//Submits a message to a public topic 
-await new ConsensusMessageSubmitTransaction()
-    .setTopicId(topicId)
-    .setMessage("hello, HCS! " + i)
-    .build(client)
-    .execute(client)
-    .getReceipt(client);
+const { Client, TopicCreateTransaction } = require("@hashgraph/sdk");
+const { myaccount, testerAccount } = require('./myaccount');
 
-//v1.4.4
+async function newTopic() {
+    const myAct  = myaccount.operatorAccountId;
+    const myKey  = myaccount.operatorPrivateKey;
 
+    const client = Client.forTestnet();
+    client.setOperator(myAct, myKey);
 
-//Create the transaction
-const transaction = await new TopicMessageSubmitTransaction()
-    .setTopicId(newTopicId)
-    .setMessage("hello, HCS! ");
-        
-//Get the transactio message
-const getMessage = transaction.getMessage();
+    const response = await new TopicCreateTransaction().execute(client);
+    const receipt  = await response.getReceipt(client);
+    const topicId  = receipt.topicId;
 
-//v2.0.0
+    console.log("Topic Id: "+topicId);
+}
+
+newTopic();
