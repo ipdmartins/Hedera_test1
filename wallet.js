@@ -3,8 +3,8 @@ const { Ed25519PrivateKey, AccountCreateTransaction, TransferTransaction,
 const si = require('systeminformation');
 var process = require('process');
 
-const { myaccount, testerAccount } = require('./myaccount');
 const frameworkAnalyzer = require("./frameworkAnalyzer");
+const { myaccount, testerAccount } = require('./myaccount');
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;

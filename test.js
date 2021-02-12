@@ -1,18 +1,30 @@
-const { Client, TopicCreateTransaction } = require("@hashgraph/sdk");
+const {
+    Client,
+    TopicCreateTransaction,
+    TopicMessageSubmitTransaction,
+    PrivateKey,
+    AccountId,
+} = require("@hashgraph/sdk")
+
 const { myaccount, testerAccount } = require('./myaccount');
 
-async function newTopic() {
-    const myAct  = myaccount.operatorAccountId;
-    const myKey  = myaccount.operatorPrivateKey;
+newTopic(myaccount.client);
 
-    const client = Client.forTestnet();
-    client.setOperator(myAct, myKey);
+async function newTopic(client) {
+    // create topic
+    const createResponse = await new TopicCreateTransaction().execute(client);
+    const createReceipt = await createResponse.getReceipt(client);
 
-    const response = await new TopicCreateTransaction().execute(client);
-    const receipt  = await response.getReceipt(client);
-    const topicId  = receipt.topicId;
+    console.log(`topic id = ${createReceipt.topicId}`);
 
-    console.log("Topic Id: "+topicId);
+    // send one message
+    const sendResponse = await new TopicMessageSubmitTransaction({
+        topicId: createReceipt.topicId,
+        message: "Hello World",
+    }).execute(client);
+
+    const sendReceipt = await sendResponse.getReceipt(client);
+
+    console.log(`topic sequence number = ${sendReceipt.topicSequenceNumber}`);
 }
 
-newTopic();
