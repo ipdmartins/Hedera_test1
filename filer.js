@@ -1,46 +1,45 @@
-const { FileCreateTransaction, Hbar } = require("@hashgraph/sdk");
-require("dotenv").config();
+const {
+    Client,
+    FileCreateTransaction,
+    FileAppendTransaction,
+    FileContentsQuery,
+    PrivateKey,
+    AccountId,
+    Hbar
+} = require("@hashgraph/sdk");
 const si = require('systeminformation');
 var process = require('process');
 
-const { myaccount, testerAccount } = require('./myaccount');
 const frameworkAnalyzer = require("./frameworkAnalyzer");
+const { myaccount, testerAccount } = require('./myaccount');
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-// messenger(myaccount.operatorAccountId, myaccount.client, testerAccount.testerAccountId, 50);
-fileCreator(testerAccount.testerPublicKey, myaccount.client);
+const appendFileContent = 'Hello world';
+const numberOfTransactions = 2;
 
-async function fileCreator(filePublicKey, client) {
+fileCreator(myaccount.client, numberOfTransactions, appendFileContent);
+myaccount.operatorPublicKey
 
-    const fileKey = await Ed25519PrivateKey.generate();
+async function fileCreator(client, numberOfTransactions, appendFileContent) {
 
-    //Create the transaction
     const transaction = await new FileCreateTransaction()
-        .setKeys([filePublicKey]) //A different key then the client operator key
-        .setContents("the file contents")
+        .setKeys([client.operatorPublicKey])
+        .setContents("UDESC init File: ")
         .setMaxTransactionFee(new Hbar(2))
-        .freezeWith(client);
+        .execute(client);
 
-    //Sign with the file private key
-    const signTx = await transaction.sign(fileKey);
+    const receipt = await transaction.getReceipt(client);
+    const nodeId = transaction.nodeId;
+    const fileId = receipt.fileId;
 
-    //Sign with the client operator private key and submit to a Hedera network
-    const submitTx = await signTx.execute(client);
+    console.log("file ID = " + fileId + 'node ID: ' + nodeId);
 
-    //Request the receipt
-    const receipt = await submitTx.getReceipt(client);
-
-    //Get the file ID
-    const newFileId = receipt.fileId;
-
-    console.log("The new file ID is: " + newFileId);
-
-    messenger(client, 3, topicId);
+    uploader(client, numberOfTransactions, nodeId, fileId, appendFileContent);
 }
 
-async function messenger(client, numberOfTransactions, topicId) {
+async function uploader(client, numberOfTransactions, nodeId, fileId, appendFileContent) {
 
     ///////// referent to analyzeTPC  /////////
     const startCpuUsage = await si.currentLoad().then(data => {
@@ -68,12 +67,20 @@ async function messenger(client, numberOfTransactions, topicId) {
         var txInput = Date.now();//it's for analyzeARD
 
         //Submits a message to a public topic 
-        const transactionProccess = transaction(topicId, client)
+        const transactionProccess = await (await new FileAppendTransaction()
+            .setNodeAccountIds([nodeId])
+            .setFileId(fileId)
+            .setContents(appendFileContent)
+            .setMaxTransactionFee(new Hbar(2))
+            .execute(client))
+            .getReceipt(client);
 
-        console.log(transactionProccess)
+        const status = transactionProccess.status.toString();
+
+        console.log(Object.prototype.toString.call(status))
 
         //se a transação foi efetivada, tx confirmadas adiciona 1
-        if (transactionProccess.status == "SUCCESS") {
+        if (status === "SUCCESS") {
             //getting consensus timestamp on blockchain in seconds for analyzeARD
             var txConfirmed = Date.now();
 
@@ -84,6 +91,7 @@ async function messenger(client, numberOfTransactions, topicId) {
             console.log(`transaction ${index + 1} failed.`)
         }
     }
+
     //get the transaction's end in millicsec for analyzeTPS
     const miliafter = Date.now();
 
@@ -93,7 +101,7 @@ async function messenger(client, numberOfTransactions, topicId) {
     const cpuUsageByTheProcess = await si.currentLoad().then(data => {
         return data;
     })
-    const coreFrequency = await si.cpuCurrentspeed().then(data => data.cores[0]);
+    const coreFrequency = await si.cpuCurrentSpeed().then(data => data.cores[0]);
     ///////// referent to analyzeTPC  /////////
 
     ///////// referent to analyzeTPMS  /////////
@@ -141,43 +149,28 @@ async function messenger(client, numberOfTransactions, topicId) {
     console.log("Transacoes de dados na rede (txs/kilobytes): ", TPND);
 
     ////////// LOGS /////////
-    // console.log('Resident Set Size process Node memory usage previous Mebabytes (MB): ', previousProcessMemoryUsage / 1000000)
-    // console.log('Resident Set Size process Node memory usage post Mebabytes (MB): ', postProcessMemoryUsage / 1000000)
-    // console.log('Transactions confirmed from t(i) to t(j): ' + txconfirmedcount);
-    // console.log('MilliTime before transaction: ' + milibefore);
-    // console.log('MilliTime after transaction: ' + miliafter);
-    // console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
-    // console.log('Measured single core: ' + coreFrequency);
-    // console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.raw_currentload_user);
-    // console.log('Measured process real memory resident set size after transaction: ' + RMEM);
-    // console.log('Measured process virtual memory size after transaction: ' + VMEM);
-    // console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
-    // console.log('Measured data read read IOs on all mounted drives after transaction: ' + dataPostIO.rIO);
-    // console.log('Measured data written IOs on all mounted drives before transaction: ' + dataPreviousIO.wIO);
-    // console.log('Measured data written IOs on all mounted drives after transaction: ' + dataPostIO.wIO);
-    // console.log('Measured transferred bytes overall (upload) before transacion: ' + previousUPLOAD);
-    // console.log('Measured transferred bytes overall (upload) after transacion: ' + postUPLOAD);
-    // console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
-    // console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
+    console.log('Resident Set Size process Node memory usage previous Mebabytes (MB): ', previousProcessMemoryUsage / 1000000)
+    console.log('Resident Set Size process Node memory usage post Mebabytes (MB): ', postProcessMemoryUsage / 1000000)
+    console.log('Transactions confirmed from t(i) to t(j): ' + txconfirmedcount);
+    console.log('MilliTime before transaction: ' + milibefore);
+    console.log('MilliTime after transaction: ' + miliafter);
+    console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
+    console.log('Measured single core: ' + coreFrequency);
+    console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.raw_currentload_user);
+    console.log('Measured process real memory resident set size after transaction: ' + RMEM);
+    console.log('Measured process virtual memory size after transaction: ' + VMEM);
+    console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
+    console.log('Measured data read read IOs on all mounted drives after transaction: ' + dataPostIO.rIO);
+    console.log('Measured data written IOs on all mounted drives before transaction: ' + dataPreviousIO.wIO);
+    console.log('Measured data written IOs on all mounted drives after transaction: ' + dataPostIO.wIO);
+    console.log('Measured transferred bytes overall (upload) before transacion: ' + previousUPLOAD);
+    console.log('Measured transferred bytes overall (upload) after transacion: ' + postUPLOAD);
+    console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
+    console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
     ////////// LOGS /////////
 
     // submitRecords(topicId);
 
-}
-
-async function transaction(topicId, client) {
-    try {
-        //Create the transaction
-        const transaction = await new TopicMessageSubmitTransaction({
-            topicId: topicId,
-            message: "Hello World",
-        }).execute(client);
-
-
-        return transaction;
-    } catch (error) {
-        console.log('Error transaction message: ' + error)
-    }
 }
 
 async function submitRecords(topicId) {
