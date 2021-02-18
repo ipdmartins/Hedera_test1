@@ -9,6 +9,7 @@ const {
 } = require("@hashgraph/sdk");
 const si = require('systeminformation');
 var process = require('process');
+const fs = require('fs')
 
 const frameworkAnalyzer = require("./frameworkAnalyzer");
 const { myaccount, testerAccount } = require('./myaccount');
@@ -19,30 +20,30 @@ var sumTxInputTxComfirmed = 0;
 const appendFileContent = 'Hello world';
 const numberOfTransactions = 2;
 
-fileCreator(myaccount.client, numberOfTransactions, appendFileContent);
+fileCreator(myaccount, numberOfTransactions, appendFileContent);
 myaccount.operatorPublicKey
 
-async function fileCreator(client, numberOfTransactions, appendFileContent) {
+async function fileCreator(myaccount, numberOfTransactions, appendFileContent) {
 
     const transaction = await new FileCreateTransaction()
-        .setKeys([client.operatorPublicKey])
+        .setKeys([myaccount.operatorPublicKey])
         .setContents("UDESC init File: ")
         .setMaxTransactionFee(new Hbar(2))
-        .execute(client);
+        .execute(myaccount.client);
 
-    const receipt = await transaction.getReceipt(client);
+    const receipt = await transaction.getReceipt(myaccount.client);
     const nodeId = transaction.nodeId;
     const fileId = receipt.fileId;
 
     console.log("file ID = " + fileId + 'node ID: ' + nodeId);
 
-    uploader(client, numberOfTransactions, nodeId, fileId, appendFileContent);
+    uploader(myaccount, numberOfTransactions, nodeId, fileId, appendFileContent);
 }
 
-async function uploader(client, numberOfTransactions, nodeId, fileId, appendFileContent) {
+async function uploader(myaccount, numberOfTransactions, nodeId, fileId, appendFileContent) {
 
     ///////// referent to analyzeTPC  /////////
-    const startCpuUsage = await si.currentLoad().then(data => {
+    await si.currentLoad().then(data => {
         return data;
     })
     ///////// referent to analyzeTPC  /////////
@@ -72,12 +73,10 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
             .setFileId(fileId)
             .setContents(appendFileContent)
             .setMaxTransactionFee(new Hbar(2))
-            .execute(client))
-            .getReceipt(client);
+            .execute(myaccount.client))
+            .getReceipt(myaccount.client);
 
         const status = transactionProccess.status.toString();
-
-        console.log(Object.prototype.toString.call(status))
 
         //se a transação foi efetivada, tx confirmadas adiciona 1
         if (status === "SUCCESS") {
@@ -108,8 +107,8 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
     const dataPostMem = await si.processes().then(data => {
         return data;
     })
-    const RMEM = dataPostMem.list[0].mem_rss;
-    const VMEM = dataPostMem.list[0].mem_vsz;
+    const RMEM = dataPostMem.list[0].memRss;
+    const VMEM = dataPostMem.list[0].memVsz;
     ///////// referent to analyzeTPMS  /////////
 
     ///////// referent to analyzeTPDIO  /////////
@@ -117,8 +116,8 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
         return data;
     })
 
-    const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO) / 1000;
-    const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO) / 1000;
+    const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO);
+    const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO);
     ///////// referent to analyzeTPDIO  /////////    
 
     ///////// referent to analyzeTPND  /////////
@@ -136,7 +135,7 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
     const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
     console.log("Average Response Delay in seconds (txs/s): ", ARD);
 
-    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.raw_currentload_user)
+    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.rawCurrentLoadUser)
     console.log("Transactions Per CPU in seconds (txs/(GHz · s)): ", TPC);
 
     const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
@@ -156,7 +155,7 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
     console.log('MilliTime after transaction: ' + miliafter);
     console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
     console.log('Measured single core: ' + coreFrequency);
-    console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.raw_currentload_user);
+    console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.rawCurrentLoadUser);
     console.log('Measured process real memory resident set size after transaction: ' + RMEM);
     console.log('Measured process virtual memory size after transaction: ' + VMEM);
     console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
@@ -169,7 +168,31 @@ async function uploader(client, numberOfTransactions, nodeId, fileId, appendFile
     console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
     ////////// LOGS /////////
 
-    // submitRecords(topicId);
+    let one = (TPS.TPS).toString()
+    one = one.replace('.', ',')
+    let two = (ARD.ARD).toString()
+    two = two.replace('.', ',')
+    let three = (TPC.TPC).toString()
+    three = three.replace('.', ',')
+    let four = (TPMS.TPMS).toString()
+    four = four.replace('.', ',')
+    let five = (TPDIO.TPDIO).toString()
+    five = five.replace('.', ',')
+    let six = (TPND.TPND).toString()
+    six = six.replace('.', ',')
+
+    var stream = fs.createWriteStream("/home/ipdmartins/Hashgraph/my_file.txt");
+    stream.once('open', function (fd) {
+        stream.write(`${one}\n`);
+        stream.write(`${two}\n`);
+        stream.write(`${three}\n`);
+        stream.write(`${four}\n`);
+        stream.write(`${five}\n`);
+        stream.write(`${six}\n`);
+        stream.end();
+    });
+
+    submitRecords(topicId);
 
 }
 

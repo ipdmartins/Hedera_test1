@@ -1,9 +1,11 @@
 const {
     TopicCreateTransaction,
     TopicMessageSubmitTransaction,
+    TopicInfoQuery,
 } = require("@hashgraph/sdk");
 const si = require('systeminformation');
 var process = require('process');
+const fs = require('fs')
 
 const frameworkAnalyzer = require("./frameworkAnalyzer");
 const { myaccount, testerAccount } = require('./myaccount');
@@ -11,28 +13,28 @@ const { myaccount, testerAccount } = require('./myaccount');
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-const message = 'Hello world';
-const numberOfTransactions = 2;
+const message = 'Lorem ipsu';
+const numberOfTransactions = 400;
 
-getTopicId(myaccount.client, message, numberOfTransactions);
+getTopicId(myaccount, message, numberOfTransactions);
 
-async function getTopicId(client, message, numberOfTransactions) {
+async function getTopicId(myaccount, message, numberOfTransactions) {
     // create topic
-    const createResponse = await new TopicCreateTransaction().execute(client);
+    const createResponse = await new TopicCreateTransaction().execute(myaccount.client);
 
     // getting the receipt
-    const createReceipt = await createResponse.getReceipt(client);
+    const createReceipt = await createResponse.getReceipt(myaccount.client);
 
     const topicId = createReceipt.topicId;
 
     console.log(`Created new topic ${topicId}`)
 
-    submitTransaction(topicId, message, client, numberOfTransactions)
+    submitTransaction(myaccount, message, numberOfTransactions, topicId)
 }
 
-async function submitTransaction(topicId, message, client, numberOfTransactions) {
+async function submitTransaction(myaccount, message, numberOfTransactions, topicId) {
     ///////// referent to analyzeTPC  /////////
-    const startCpuUsage = await si.currentLoad().then(data => {
+    await si.currentLoad().then(data => {
         return data;
     })
     ///////// referent to analyzeTPC  /////////
@@ -60,9 +62,9 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
         const sendResponse = await new TopicMessageSubmitTransaction({
             topicId: topicId,
             message: message,
-        }).execute(client);
+        }).execute(myaccount.client);
 
-        const sendReceipt = await sendResponse.getReceipt(client);
+        const sendReceipt = await sendResponse.getReceipt(myaccount.client);
 
         const status = sendReceipt.status.toString();
 
@@ -95,8 +97,8 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
     const dataPostMem = await si.processes().then(data => {
         return data;
     })
-    const RMEM = dataPostMem.list[0].mem_rss;
-    const VMEM = dataPostMem.list[0].mem_vsz;
+    const RMEM = dataPostMem.list[0].memRss;
+    const VMEM = dataPostMem.list[0].memVsz;
     ///////// referent to analyzeTPMS  /////////
 
     ///////// referent to analyzeTPDIO  /////////
@@ -104,8 +106,8 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
         return data;
     })
 
-    const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO) / 1000;
-    const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO) / 1000;
+    const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO);
+    const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO);
     ///////// referent to analyzeTPDIO  /////////    
 
     ///////// referent to analyzeTPND  /////////
@@ -123,7 +125,7 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
     const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
     console.log("Average Response Delay in seconds (txs/s): ", ARD);
 
-    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.raw_currentload_user)
+    const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.rawCurrentLoadUser)
     console.log("Transactions Per CPU in seconds (txs/(GHz · s)): ", TPC);
 
     const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
@@ -143,7 +145,7 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
     console.log('MilliTime after transaction: ' + miliafter);
     console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
     console.log('Measured single core: ' + coreFrequency);
-    console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.raw_currentload_user);
+    console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.rawCurrentLoadUser);
     console.log('Measured process real memory resident set size after transaction: ' + RMEM);
     console.log('Measured process virtual memory size after transaction: ' + VMEM);
     console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
@@ -156,20 +158,50 @@ async function submitTransaction(topicId, message, client, numberOfTransactions)
     console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
     ////////// LOGS /////////
 
-    // log(topicId, client)
+    let one = (TPS.TPS).toString()
+    one = one.replace('.', ',')
+    let two = (ARD.ARD).toString()
+    two = two.replace('.', ',')
+    let three = (TPC.TPC).toString()
+    three = three.replace('.', ',')
+    let four = (TPMS.TPMS).toString()
+    four = four.replace('.', ',')
+    let five = (TPDIO.TPDIO).toString()
+    five = five.replace('.', ',')
+    let six = (TPND.TPND).toString()
+    six = six.replace('.', ',')
+
+    var stream = fs.createWriteStream("/home/ipdmartins/Hashgraph/my_file.txt");
+    stream.once('open', function (fd) {
+        stream.write(`${one}\n`);
+        stream.write(`${two}\n`);
+        stream.write(`${three}\n`);
+        stream.write(`${four}\n`);
+        stream.write(`${five}\n`);
+        stream.write(`${six}\n`);
+        stream.end();
+    });
+
+    log(topicId, myaccount)
 }
 
-async function log(topicId, client) {
+async function log(topicId, myaccount) {
 
-    const topicInfo = await new ConsensusTopicInfoQuery()
-        .setTopicId(topicId)
-        .execute(client);
+    //Create the account info query
+    const query = new TopicInfoQuery()
+        .setTopicId(topicId);
 
-    console.log(
-        `Sequence Number: ${topicInfo.sequenceNumber}
-     Running Hash: ${topicInfo.runningHash}
-     Expiration Time: ${topicInfo.expirationTime}
-     Topic Memo: ${topicInfo.topicMemo}`);
+    //Submit the query to a Hedera network
+    const info = await query.execute(myaccount.client);
+
+    //Print the account key to the console
+    console.log(info.expirationTime);
+
+    // console.log(
+    //     `Sequence Number: ${topicInfo.sequenceNumber}
+    //  Running Hash: ${topicInfo.runningHash}
+    //  Expiration Time: ${topicInfo.expirationTime}
+    //  Topic Memo: ${topicInfo.topicMemo}`);
 
 }
 

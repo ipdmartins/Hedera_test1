@@ -10,7 +10,7 @@ const { myaccount, testerAccount } = require('./myaccount');
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-transfer(myaccount, testerAccount, 100);
+transfer(myaccount, testerAccount, 50);
 // newAccount(myaccount.operatorAccountId, myaccount.client);
 
 async function newAccount(operatorAccountId, client) {
