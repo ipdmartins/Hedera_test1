@@ -13,8 +13,8 @@ const { myaccount, testerAccount } = require('./myaccount');
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-const message = 'Lorem ipsu';
-const numberOfTransactions = 400;
+const message = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam se';
+const numberOfTransactions = 200;
 
 getTopicId(myaccount, message, numberOfTransactions);
 

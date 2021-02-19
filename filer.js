@@ -3,44 +3,53 @@ const {
     FileCreateTransaction,
     FileAppendTransaction,
     FileContentsQuery,
+    FileInfoQuery,
     PrivateKey,
     AccountId,
     Hbar
 } = require("@hashgraph/sdk");
+require("dotenv").config();
+
 const si = require('systeminformation');
 var process = require('process');
 const fs = require('fs')
-
 const frameworkAnalyzer = require("./frameworkAnalyzer");
-const { myaccount, testerAccount } = require('./myaccount');
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-const appendFileContent = 'Hello world';
-const numberOfTransactions = 2;
+const appendFileContent = 'H';
+const numberOfTransactions = 400;
 
-fileCreator(myaccount, numberOfTransactions, appendFileContent);
-myaccount.operatorPublicKey
+fileCreator(numberOfTransactions, appendFileContent);
 
-async function fileCreator(myaccount, numberOfTransactions, appendFileContent) {
+async function fileCreator(numberOfTransactions, appendFileContent) {
 
-    const transaction = await new FileCreateTransaction()
-        .setKeys([myaccount.operatorPublicKey])
-        .setContents("UDESC init File: ")
-        .setMaxTransactionFee(new Hbar(2))
-        .execute(myaccount.client);
+    const client = Client.forTestnet();
 
-    const receipt = await transaction.getReceipt(myaccount.client);
-    const nodeId = transaction.nodeId;
+    if (process.env.OPERATOR_PRIVATE_KEY != null && process.env.OPERATOR_ID != null) {
+        const operatorKey = PrivateKey.fromString(process.env.OPERATOR_PRIVATE_KEY);
+        const operatorId = AccountId.fromString(process.env.OPERATOR_ID);
+
+        client.setOperator(operatorId, operatorKey);
+    }
+
+    const resp = await new FileCreateTransaction()
+        .setKeys([client.operatorPublicKey])
+        .setContents("UDESC-ipdmartins-TCC-Hashgraph")
+        // .setContents("[e2e::FileCreateTransaction]")
+        .setMaxTransactionFee(new Hbar(5))
+        .execute(client);
+
+    const receipt = await resp.getReceipt(client);
     const fileId = receipt.fileId;
 
-    console.log("file ID = " + fileId + 'node ID: ' + nodeId);
+    console.log("file ID = " + fileId);
 
-    uploader(myaccount, numberOfTransactions, nodeId, fileId, appendFileContent);
+    uploader(client, numberOfTransactions, fileId, appendFileContent, resp);
 }
 
-async function uploader(myaccount, numberOfTransactions, nodeId, fileId, appendFileContent) {
+async function uploader(client, numberOfTransactions, fileId, appendFileContent, resp) {
 
     ///////// referent to analyzeTPC  /////////
     await si.currentLoad().then(data => {
@@ -68,27 +77,21 @@ async function uploader(myaccount, numberOfTransactions, nodeId, fileId, appendF
         var txInput = Date.now();//it's for analyzeARD
 
         //Submits a message to a public topic 
-        const transactionProccess = await (await new FileAppendTransaction()
-            .setNodeAccountIds([nodeId])
+        await (await new FileAppendTransaction()
+            .setNodeAccountIds([resp.nodeId])
             .setFileId(fileId)
             .setContents(appendFileContent)
             .setMaxTransactionFee(new Hbar(2))
-            .execute(myaccount.client))
-            .getReceipt(myaccount.client);
+            .execute(client))
+            .getReceipt(client);
 
-        const status = transactionProccess.status.toString();
+        //getting consensus timestamp on blockchain in seconds for analyzeARD
+        var txConfirmed = Date.now();
 
-        //se a transação foi efetivada, tx confirmadas adiciona 1
-        if (status === "SUCCESS") {
-            //getting consensus timestamp on blockchain in seconds for analyzeARD
-            var txConfirmed = Date.now();
+        sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
 
-            sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
+        txconfirmedcount++;
 
-            txconfirmedcount++;
-        } else {
-            console.log(`transaction ${index + 1} failed.`)
-        }
     }
 
     //get the transaction's end in millicsec for analyzeTPS
@@ -192,17 +195,18 @@ async function uploader(myaccount, numberOfTransactions, nodeId, fileId, appendF
         stream.end();
     });
 
-    submitRecords(topicId);
+    submitRecords(fileId, client);
 
 }
 
-async function submitRecords(topicId) {
-    //Create the transaction
-    const transaction = await new TopicMessageSubmitTransaction()
-        .setTopicId(topicId)
+async function submitRecords(fileId, client) {
+    //Create the query
+    const query = new FileInfoQuery()
+        .setFileId(fileId);
 
-    //Get the transactio message
-    const getMessage = transaction.getMessage();
+    //Sign the query with the client operator private key and submit to a Hedera network
+    const getInfo = await query.execute(client);
 
-    console.log("MY MESSAGES: ", getMessage);
+    console.log("File size: " + getInfo.size);
+
 }
