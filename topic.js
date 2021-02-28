@@ -13,8 +13,11 @@ const { myaccount, testerAccount } = require('./myaccount');
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-const message = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam se';
-const numberOfTransactions = 200;
+const message = 'L';
+// const message = 'Lorem ipsu';
+// const message = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam se';
+
+const numberOfTransactions = 1;
 
 getTopicId(myaccount, message, numberOfTransactions);
 
@@ -204,4 +207,5 @@ async function log(topicId, myaccount) {
     //  Topic Memo: ${topicInfo.topicMemo}`);
 
 }
+
 

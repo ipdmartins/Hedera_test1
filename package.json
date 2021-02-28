@@ -23,6 +23,7 @@
   "dependencies": {
     "@hashgraph/sdk": "^2.0.16",
     "dotenv": "^8.2.0",
-    "systeminformation": "^5.2.5"
+    "systeminformation": "^5.2.5",
+    "worker-thread-pool": "^1.0.0"
   }
 }

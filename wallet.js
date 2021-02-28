@@ -10,7 +10,7 @@ const { myaccount, testerAccount } = require('./myaccount');
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-transfer(myaccount, testerAccount, 50);
+transfer(myaccount, testerAccount, 25);
 // newAccount(myaccount.operatorAccountId, myaccount.client);
 
 async function newAccount(operatorAccountId, client) {
@@ -59,8 +59,8 @@ async function transfer(myaccount, testerAccount, numberOfTransactions) {
         var txInput = Date.now();//it's for analyzeARD
 
         const transaction = await new TransferTransaction()
-            .addHbarTransfer(myaccount.operatorAccountId, Hbar.fromTinybars(-25600))
-            .addHbarTransfer(testerAccount.testerAccountId, Hbar.fromTinybars(25600))
+            .addHbarTransfer(myaccount.operatorAccountId, Hbar.fromTinybars(-256))
+            .addHbarTransfer(testerAccount.testerAccountId, Hbar.fromTinybars(256))
             .execute(myaccount.client);
 
         const transactionReceipt = await transaction.getReceipt(myaccount.client);

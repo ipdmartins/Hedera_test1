@@ -2,7 +2,6 @@ const {
     Client,
     FileCreateTransaction,
     FileAppendTransaction,
-    FileContentsQuery,
     FileInfoQuery,
     PrivateKey,
     AccountId,
@@ -18,8 +17,8 @@ const frameworkAnalyzer = require("./frameworkAnalyzer");
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
 
-const appendFileContent = 'H';
-const numberOfTransactions = 400;
+const appendFileContent = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam sw';
+const numberOfTransactions = 1;
 
 fileCreator(numberOfTransactions, appendFileContent);
 
@@ -207,6 +206,7 @@ async function submitRecords(fileId, client) {
     //Sign the query with the client operator private key and submit to a Hedera network
     const getInfo = await query.execute(client);
 
-    console.log("File size: " + getInfo.size);
+    console.log("File size: " + getInfo.size + ' bytes');
 
 }
+
