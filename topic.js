@@ -9,6 +9,7 @@ const fs = require('fs')
 
 const frameworkAnalyzer = require("./frameworkAnalyzer");
 const { myaccount, testerAccount } = require('./myaccount');
+const consensus = require('./thread');
 
 var txconfirmedcount = 0;
 var sumTxInputTxComfirmed = 0;
@@ -17,9 +18,13 @@ const message = 'L';
 // const message = 'Lorem ipsu';
 // const message = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam se';
 
-const numberOfTransactions = 1;
+const numberOfTransactions = 10;
 
-getTopicId(myaccount, message, numberOfTransactions);
+
+function teste (num){
+    console.log(num)
+}
+// getTopicId(myaccount, message, numberOfTransactions);
 
 async function getTopicId(myaccount, message, numberOfTransactions) {
     // create topic
@@ -54,38 +59,25 @@ async function submitTransaction(myaccount, message, numberOfTransactions, topic
     const previousDOWNLOAD = dataPreviousNet[0].rx_bytes;
     ///////// referent to analyzeTPND  /////////
 
-    const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
+    // const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
 
     const previousProcessMemoryUsage = process.memoryUsage().rss;
 
-    for (let index = 0; index < numberOfTransactions; index++) {
-        var txInput = Date.now();//it's for analyzeARD
+    const sharedUint8Array = new Uint8Array(new SharedArrayBuffer(5));
 
-        // send one message
-        const sendResponse = await new TopicMessageSubmitTransaction({
-            topicId: topicId,
-            message: message,
-        }).execute(myaccount.client);
+    const loop = numberOfTransactions / 5;
 
-        const sendReceipt = await sendResponse.getReceipt(myaccount.client);
+    for (let index = 0; index < 5; index++) {
 
-        const status = sendReceipt.status.toString();
-
-        //se a transação foi efetivada, tx confirmadas adiciona 1
-        if (status === 'SUCCESS') {
-            //getting consensus timestamp on blockchain in seconds for analyzeARD
-            var txConfirmed = Date.now();
-
-            sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
-
-            txconfirmedcount++;
-        } else {
-            console.log(`transaction ${index + 1} failed.`)
-        }
+        // consensus({
+        //     iterations: 5, topicId: topicId, message: message, client: myaccount.client,
+        //     position: index, arr: sharedUint8Array
+        // }).then(result => console.log(result));
+        consensus({
+            iterations: loop,
+            position: index, arr: sharedUint8Array
+        }).then(result => console.log(result));
     }
-
-    //get the transaction's end in millicsec for analyzeTPS
-    const miliafter = Date.now();
 
     const postProcessMemoryUsage = process.memoryUsage().rss;
 
@@ -200,12 +192,6 @@ async function log(topicId, myaccount) {
     //Print the account key to the console
     console.log(info.expirationTime);
 
-    // console.log(
-    //     `Sequence Number: ${topicInfo.sequenceNumber}
-    //  Running Hash: ${topicInfo.runningHash}
-    //  Expiration Time: ${topicInfo.expirationTime}
-    //  Topic Memo: ${topicInfo.topicMemo}`);
-
 }
 
-
+module.exports = teste;
