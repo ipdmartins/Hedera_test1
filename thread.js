@@ -1,9 +1,7 @@
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
-const Pool = require('worker-thread-pool');
 const {
     TopicMessageSubmitTransaction,
 } = require("@hashgraph/sdk");
-const CPUS = require('os').cpus().length;
 
 const teste = require('./topic')
 
@@ -74,55 +72,55 @@ if(isMainThread){
 //     })
 // }
 
-// if (!isMainThread) {
-//     console.log('AQUI')
-//     console.log(workerData.iterations)
-//     const sharredArray = workerData.arr;
-//     const numberOfTransactions = workerData.iterations;
-//     var sumTxInputTxComfirmed = 0;
-//     var txconfirmedcount = 0;
+if (!isMainThread) {
+    console.log('AQUI')
+    console.log(workerData.iterations)
+    const sharredArray = workerData.arr;
+    const numberOfTransactions = workerData.iterations;
+    var sumTxInputTxComfirmed = 0;
+    var txconfirmedcount = 0;
 
-//     const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
+    const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
 
-//     for (let index = 0; index < numberOfTransactions; index++) {
-//         var txInput = Date.now();//it's for analyzeARD
+    for (let index = 0; index < numberOfTransactions; index++) {
+        var txInput = Date.now();//it's for analyzeARD
 
-//         // send one message
-//         const sendResponse = new TopicMessageSubmitTransaction({
-//             topicId: workerData.topicId,
-//             message: workerData.message,
-//         }).execute(workerData.client);
+        // send one message
+        const sendResponse = new TopicMessageSubmitTransaction({
+            topicId: workerData.topicId,
+            message: workerData.message,
+        }).execute(workerData.client);
 
-//         const sendReceipt = sendResponse.getReceipt(workerData.client);
+        const sendReceipt = sendResponse.getReceipt(workerData.client);
 
-//         const status = sendReceipt.status.toString();
+        const status = sendReceipt.status.toString();
 
-//         //se a transação foi efetivada, tx confirmadas adiciona 1
-//         if (status === 'SUCCESS') {
-//             //getting consensus timestamp on blockchain in seconds for analyzeARD
-//             var txConfirmed = Date.now();
+        //se a transação foi efetivada, tx confirmadas adiciona 1
+        if (status === 'SUCCESS') {
+            //getting consensus timestamp on blockchain in seconds for analyzeARD
+            var txConfirmed = Date.now();
 
-//             sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
+            sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
 
-//             txconfirmedcount++;
-//         } else {
-//             console.log(`transaction ${index + 1} failed.`)
-//         }
-//     }
+            txconfirmedcount++;
+        } else {
+            console.log(`transaction ${index + 1} failed.`)
+        }
+    }
 
-//     //get the transaction's end in millicsec for analyzeTPS
-//     const miliafter = Date.now();
+    //get the transaction's end in millicsec for analyzeTPS
+    const miliafter = Date.now();
 
-//     const result = {
-//         milibefore,
-//         sumTxInputTxComfirmed,
-//         txconfirmedcount,
-//         miliafter
-//     }
+    const result = {
+        milibefore,
+        sumTxInputTxComfirmed,
+        txconfirmedcount,
+        miliafter
+    }
 
-//     Atomics.add(sharredArray, workerData.position, result);
-//     parentPort.postMessage(result);
-// }
+    Atomics.add(sharredArray, workerData.position, result);
+    parentPort.postMessage(result);
+}
 
 
 // module.exports = consensus;
