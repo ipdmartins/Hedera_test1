@@ -9,13 +9,6 @@ const fs = require('fs')
 
 module.exports = class Topic {
 
-    // constructor(TopicCreateTransaction, TopicMessageSubmitTransaction, TopicInfoQuery) {
-    //     this.TopicCreateTransaction = TopicCreateTransaction;
-    //     this.TopicMessageSubmitTransaction = TopicMessageSubmitTransaction;
-    //     this.TopicInfoQuery = TopicInfoQuery;
-    //     this.numberOfTransactions = numberOfTransactions;
-    // }
-
     async getTopicId(myaccount, message, numberOfTransactions, frameworkAnalyzer) {
         // create topic
         const createResponse = await new TopicCreateTransaction().execute(myaccount.client);
