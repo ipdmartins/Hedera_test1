@@ -9,21 +9,21 @@ const fs = require('fs')
 
 module.exports = class Topic {
 
-    async getTopicId(myaccount, message, numberOfTransactions, frameworkAnalyzer) {
+    async getTopicId(myaccount, message, numberOfTransactions, frameworkAnalyzer, bytes) {
         // create topic
-        const createResponse = await new TopicCreateTransaction().execute(myaccount.client);
+        const createResponse = await new TopicCreateTransaction().execute(myaccount.testClient);
 
         // getting the receipt
-        const createReceipt = await createResponse.getReceipt(myaccount.client);
+        const createReceipt = await createResponse.getReceipt(myaccount.testClient);
 
         const topicId = createReceipt.topicId;
 
         console.log(`Created new topic ${topicId}`)
 
-        this.submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer) 
+        this.submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes)
     }
 
-    async submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer) {
+    async submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes) {
         ///////// referent to analyzeTPC  /////////
         await si.currentLoad().then(data => {
             return data;
@@ -42,14 +42,12 @@ module.exports = class Topic {
         const previousDOWNLOAD = dataPreviousNet[0].rx_bytes;
         ///////// referent to analyzeTPND  /////////
 
-        // const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
-
         const previousProcessMemoryUsage = process.memoryUsage().rss;
-
-        const milibefore = Date.now();
 
         var sumTxInputTxComfirmed = 0;
         var txconfirmedcount = 0;
+
+        const milibefore = Date.now();//get the transaction beginning in millisec for analyzeTPS
 
         for (let index = 0; index < numberOfTransactions; index++) {
             var txInput = Date.now();//it's for analyzeARD
@@ -58,17 +56,17 @@ module.exports = class Topic {
             const sendResponse = await new TopicMessageSubmitTransaction({
                 topicId: topicId,
                 message: message,
-            }).execute(myaccount.client);
+            }).execute(myaccount.testClient);
 
-            const sendReceipt = await sendResponse.getReceipt(myaccount.client);
+            //getting consensus timestamp on blockchain in seconds for analyzeARD
+            var txConfirmed = Date.now();
+
+            const sendReceipt = await sendResponse.getReceipt(myaccount.testClient);
 
             const status = sendReceipt.status.toString();
 
             //se a transação foi efetivada, tx confirmadas adiciona 1
             if (status === 'SUCCESS') {
-                //getting consensus timestamp on blockchain in seconds for analyzeARD
-                var txConfirmed = Date.now();
-
                 sumTxInputTxComfirmed += (txConfirmed - txInput)//it's for analyzeARD
 
                 txconfirmedcount++;
@@ -115,7 +113,7 @@ module.exports = class Topic {
         ///////// referent to analyzeTPND  /////////
 
         console.log();
-        console.log();
+        console.log('Resultado equivalente a: ' + bytes + ' com topicId: ' + topicId);
         const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, milibefore, miliafter);
         console.log("Transactions per second (txs/s): ", TPS);
 
@@ -170,7 +168,7 @@ module.exports = class Topic {
         let six = (TPND.TPND).toString()
         six = six.replace('.', ',')
 
-        var stream = fs.createWriteStream(`/home/ipdmartins/Hashgraph/${topicId}.txt`);
+        var stream = fs.createWriteStream(`/home/ipdmartins/Hashgraph/sao_${bytes}_topico_${topicId}.txt`);
         stream.once('open', function (fd) {
             stream.write(`${one}\n`);
             stream.write(`${two}\n`);
@@ -181,19 +179,20 @@ module.exports = class Topic {
             stream.end();
         });
 
-        this.log(topicId, myaccount)
+        this.log(topicId, myaccount, bytes)
     }
 
-    async log(topicId, myaccount) {
+    async log(topicId, myaccount, bytes) {
 
         //Create the account info query
         const query = new TopicInfoQuery()
             .setTopicId(topicId);
 
         //Submit the query to a Hedera network
-        const info = await query.execute(myaccount.client);
+        const info = await query.execute(myaccount.testClient);
 
         //Print the account key to the console
+        console.log('Resultado equivalente a: ' + bytes + ' com topicId: ' + topicId);
         console.log(info.expirationTime);
 
     }
