@@ -8,28 +8,27 @@ const Filer = require('./filer');
 const message1 = 'L';
 const message10 = 'Lorem ipsu';
 const message100 = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti innunc Lorem ipsum egestas lorem aliquam se';
+const client = testerAccount.testClient;
 
 if (isMainThread) {
-    for (let index = 0; index < 5; index++) {
-        const worker = new Worker(__filename, { workerData: { num: 100, cond: 1 } })
-        worker.once('message', function () {
-            console.log('Thread worker id: ' + worker.threadId + ' finished');
-        })
-        worker.on('error', console.error); 
-        console.log('Iniciando worker id: ' + worker.threadId);
-    }
-
-    for (let index = 0; index < 5; index++) { 
-        const worker = new Worker(__filename, { workerData: { num: 400, cond: 10 } })
-        worker.once('message', function () {
-            console.log('Thread worker id: ' + worker.threadId + ' finished');
-        })
-        worker.on('error', console.error);
-        console.log('Iniciando worker id: ' + worker.threadId);
-    }
-
-    for (let index = 0; index < 5; index++) {
-        const worker = new Worker(__filename, { workerData: { num: 25, cond: 100 } })
+    let id = 25;
+    for (let x = 1; x <= 400; x++) {
+        const worker = new Worker(__filename, { workerData: { num: 1, byte: 100, lote: id } })
+        switch (x) {
+            case 1:
+                id = 50;
+                break;
+            case 3:
+                id = 100;
+                break;
+            case 7:
+                id = 200;
+                break;
+            case 15:
+                id = 400;
+            default:
+                break;
+        }
         worker.once('message', function () {
             console.log('Thread worker id: ' + worker.threadId + ' finished');
         })
@@ -40,33 +39,38 @@ if (isMainThread) {
 } else {
     if (!workerData) return;
 
-    setTimeout(executor, 2000);
-    
+    executor();
+
 }
 
-function executor(){
+async function executor() {
     const numberOfTransactions = workerData.num;
+    const cond = workerData.byte;
+    const lotes = workerData.lote;
 
-    const cond = workerData.cond;
+    if (cond === 1) {
+        // const topic = new Topic();
+        // topic.getTopicId(client, message1, numberOfTransactions, frameworkAnalyzer, cond, lotes)
 
-    if(cond === 1){
-        const topic = new Topic();
-        topic.getTopicId(testerAccount, message1, numberOfTransactions, frameworkAnalyzer, cond)
+        const filer = new Filer();
+        filer.fileCreator(numberOfTransactions, message1, cond, lotes)
     }
 
-    if(cond === 10){
-        const topic = new Topic();
-        topic.getTopicId(testerAccount, message10, numberOfTransactions, frameworkAnalyzer, cond)
+    if (cond === 10) {
+        // const topic = new Topic();
+        // topic.getTopicId(client, message10, numberOfTransactions, frameworkAnalyzer, cond, lotes)
+
+        const filer = new Filer();
+        filer.fileCreator(numberOfTransactions, message10, cond, lotes)
     }
 
-    if(cond === 100){
-        const topic = new Topic();
-        topic.getTopicId(testerAccount, message100, numberOfTransactions, frameworkAnalyzer, cond)
-    }
+    if (cond === 100) {
+        // const topic = new Topic();
+        // topic.getTopicId(client, message100, numberOfTransactions, frameworkAnalyzer, cond, lotes)
 
-    
-    // const filer = new Filer();
-    // filer.fileCreator(numberOfTransactions, message)
+        const filer = new Filer();
+        filer.fileCreator(numberOfTransactions, message100, cond, lotes)
+    }
 
     parentPort.postMessage("Concluded");
 }

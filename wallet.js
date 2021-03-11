@@ -59,8 +59,8 @@ async function transfer(myaccount, testerAccount, numberOfTransactions) {
         var txInput = Date.now();//it's for analyzeARD
 
         const transaction = await new TransferTransaction()
-            .addHbarTransfer(myaccount.operatorAccountId, Hbar.fromTinybars(-256))
-            .addHbarTransfer(testerAccount.testerAccountId, Hbar.fromTinybars(256))
+            .addHbarTransfer(myaccount.operatorAccountId, Hbar.fromTinybars(-1000000000))
+            .addHbarTransfer(testerAccount.testerAccountId, Hbar.fromTinybars(1000000000))
             .execute(myaccount.client);
 
         const transactionReceipt = await transaction.getReceipt(myaccount.client);

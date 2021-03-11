@@ -16,7 +16,11 @@ const fs = require('fs')
 
 module.exports = class Filer {
 
-    async fileCreator(numberOfTransactions, appendFileContent) {
+    constructor() {
+        this.path = '/home/ipdmartins/Hashgraph/';
+    }
+
+    async fileCreator(numberOfTransactions, appendFileContent, bytes, lotes) {
 
         const client = Client.forTestnet();
 
@@ -31,7 +35,7 @@ module.exports = class Filer {
             .setKeys([client.operatorPublicKey])
             .setContents("UDESC-ipdmartins-TCC-Hashgraph")
             // .setContents("[e2e::FileCreateTransaction]")
-            .setMaxTransactionFee(new Hbar(5))
+            .setMaxTransactionFee(new Hbar(3))
             .execute(client);
 
         const receipt = await resp.getReceipt(client);
@@ -39,10 +43,10 @@ module.exports = class Filer {
 
         console.log("file ID = " + fileId);
 
-        this.uploader(client, numberOfTransactions, fileId, appendFileContent, resp);
+        this.uploader(client, numberOfTransactions, fileId, appendFileContent, resp, bytes, lotes);
     }
 
-    async uploader(client, numberOfTransactions, fileId, appendFileContent, resp) {
+    async uploader(client, numberOfTransactions, fileId, appendFileContent, resp, bytes, lotes) {
 
         ///////// referent to analyzeTPC  /////////
         await si.currentLoad().then(data => {
@@ -76,7 +80,7 @@ module.exports = class Filer {
                 .setNodeAccountIds([resp.nodeId])
                 .setFileId(fileId)
                 .setContents(appendFileContent)
-                .setMaxTransactionFee(new Hbar(2))
+                .setMaxTransactionFee(new Hbar(3))
                 .execute(client))
                 .getReceipt(client);
 
@@ -127,7 +131,7 @@ module.exports = class Filer {
         ///////// referent to analyzeTPND  /////////
 
         console.log();
-        console.log();
+        console.log('Resultado equivalente a: ' + bytes + ' bytes, ' +lotes+ ' lotes e com fileId: ' + fileId);
         const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, milibefore, miliafter);
         console.log("Transactions per second (txs/s): ", TPS);
 
@@ -166,7 +170,6 @@ module.exports = class Filer {
         console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
         console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
         console.log();
-        console.log();
         ////////// LOGS /////////
 
         let one = (TPS.TPS).toString()
@@ -182,21 +185,16 @@ module.exports = class Filer {
         let six = (TPND.TPND).toString()
         six = six.replace('.', ',')
 
-        var stream = fs.createWriteStream(`/home/ipdmartins/Hashgraph/${fileId}.txt`);
-        stream.once('open', function (fd) {
-            stream.write(`${one}\n`);
-            stream.write(`${two}\n`);
-            stream.write(`${three}\n`);
-            stream.write(`${four}\n`);
-            stream.write(`${five}\n`);
-            stream.write(`${six}\n`);
-            stream.end();
+        const result = `${one};${two};${three};${four};${five};${six}\n`
+
+        fs.appendFile(this.path+bytes+'_bytes'+lotes+'_lotes.txt', result, (err) => {
+            if (err) throw err;
         });
 
-        this.submitRecords(fileId, client);
+        this.submitRecords(fileId, client, bytes);
     }
 
-    async submitRecords(fileId, client) {
+    async submitRecords(fileId, client, bytes) {
         //Create the query
         const query = new FileInfoQuery()
             .setFileId(fileId);
@@ -204,7 +202,7 @@ module.exports = class Filer {
         //Sign the query with the client operator private key and submit to a Hedera network
         const getInfo = await query.execute(client);
 
-        console.log("File size: " + getInfo.size + ' bytes');
+        console.log("Transação de " + bytes + " bytes, com file size: " + getInfo.size + ' bytes' + ' com fileId: ' + fileId);
 
     }
 

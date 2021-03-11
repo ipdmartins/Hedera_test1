@@ -31,7 +31,7 @@ module.exports = {
 	},
 
 	//Transactions Per CPU (OK, implemented and working)
-	analyzeTPC(txconfirmedcount, F, cpuPercent) {
+	analyzeTPC(txconfirmedcount, F, cpuPercent) {// sem fé
 		/*
 		TPC: Transactions Per CPU during a period of time from ti to tj (txconfirmedcount), where F is the frequency 
 		of a single CPU core and CPU(t) is the CPU usage of the blockchain program at t.
@@ -41,6 +41,8 @@ module.exports = {
 		mas não traz o percentual de uso.
 		*/
 		
+					 // 25                 100
+					 //  
 		var TPC = txconfirmedcount / (F * cpuPercent);
 
 		return {
@@ -49,8 +51,8 @@ module.exports = {
 	},
 
 	//Transactions Per Memory Second (OK, implemented and working)
-	analyzeTPMS(txconfirmedcount, RMEM, VMEM) {
-		//During a period of time from ti to tj (txconfirmedcount), where RMEM(t) is the real memory used 
+	analyzeTPMS(txconfirmedcount, RMEM, VMEM) {// sem fé
+		//During a period of time from ti to tj (txconfirmed//count), where RMEM(t) is the real memory used 
 		//by the blockchain program at t and VMEM(t) is the virtual memory of it
 		
 		var TPMS = txconfirmedcount / (RMEM + VMEM);
@@ -61,7 +63,7 @@ module.exports = {
 	},
 
 	//Transactions Per Disk I/O (OK, implemented and working)
-	analyzeTPDIO(txconfirmedcount, DISKR, DISKW) {
+	analyzeTPDIO(txconfirmedcount, DISKR, DISKW) {// sem fé
 		/*
 		where DISKR(t) is the size of the data read from the disk in the second t and DISKW(t) 
 		is the size of the data written into the disk.

@@ -9,21 +9,25 @@ const fs = require('fs')
 
 module.exports = class Topic {
 
-    async getTopicId(myaccount, message, numberOfTransactions, frameworkAnalyzer, bytes) {
+    constructor() {
+        this.path = '/home/ipdmartins/Hashgraph/';
+    }
+
+    async getTopicId(myaccount, message, numberOfTransactions, frameworkAnalyzer, bytes, lotes) {
         // create topic
-        const createResponse = await new TopicCreateTransaction().execute(myaccount.testClient);
+        const createResponse = await new TopicCreateTransaction().execute(myaccount);
 
         // getting the receipt
-        const createReceipt = await createResponse.getReceipt(myaccount.testClient);
+        const createReceipt = await createResponse.getReceipt(myaccount);
 
         const topicId = createReceipt.topicId;
 
         console.log(`Created new topic ${topicId}`)
 
-        this.submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes)
+        this.submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes, lotes)
     }
 
-    async submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes) {
+    async submitTransaction(myaccount, message, numberOfTransactions, topicId, frameworkAnalyzer, bytes, lotes) {
         ///////// referent to analyzeTPC  /////////
         await si.currentLoad().then(data => {
             return data;
@@ -56,12 +60,12 @@ module.exports = class Topic {
             const sendResponse = await new TopicMessageSubmitTransaction({
                 topicId: topicId,
                 message: message,
-            }).execute(myaccount.testClient);
+            }).execute(myaccount);
 
             //getting consensus timestamp on blockchain in seconds for analyzeARD
             var txConfirmed = Date.now();
 
-            const sendReceipt = await sendResponse.getReceipt(myaccount.testClient);
+            const sendReceipt = await sendResponse.getReceipt(myaccount);
 
             const status = sendReceipt.status.toString();
 
@@ -113,7 +117,7 @@ module.exports = class Topic {
         ///////// referent to analyzeTPND  /////////
 
         console.log();
-        console.log('Resultado equivalente a: ' + bytes + ' com topicId: ' + topicId);
+        console.log('Resultado equivalente a: ' + bytes + ' bytes, ' +lotes+ ' lotes e com topicId: ' + topicId);
         const TPS = frameworkAnalyzer.analyzeTPS(txconfirmedcount, milibefore, miliafter);
         console.log("Transactions per second (txs/s): ", TPS);
 
@@ -152,7 +156,6 @@ module.exports = class Topic {
         console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
         console.log('Measured received bytes overall (download) after transacion: ' + postDOWNLOAD);
         console.log();
-        console.log();
         ////////// LOGS /////////
 
         let one = (TPS.TPS).toString()
@@ -168,16 +171,23 @@ module.exports = class Topic {
         let six = (TPND.TPND).toString()
         six = six.replace('.', ',')
 
-        var stream = fs.createWriteStream(`/home/ipdmartins/Hashgraph/sao_${bytes}_topico_${topicId}.txt`);
-        stream.once('open', function (fd) {
-            stream.write(`${one}\n`);
-            stream.write(`${two}\n`);
-            stream.write(`${three}\n`);
-            stream.write(`${four}\n`);
-            stream.write(`${five}\n`);
-            stream.write(`${six}\n`);
-            stream.end();
+        const result = `${one};${two};${three};${four};${five};${six}\n`
+
+        fs.appendFile(this.path+bytes+'_bytes'+lotes+'_lotes.txt', result, (err) => {
+            if (err) throw err;
         });
+
+        // var stream = fs.createWriteStream(`/home/ipdmartins/Hashgraph/file_${bytes}_bytes_ID_${topicId}.txt`);
+
+        // stream.once('open', function (fd) {
+        //     stream.write(`${one};`);
+        //     stream.write(`${two};`);
+        //     stream.write(`${three};`);
+        //     stream.write(`${four};`);
+        //     stream.write(`${five};`);
+        //     stream.write(`${six}\n`);
+        //     stream.end();
+        // });
 
         this.log(topicId, myaccount, bytes)
     }
@@ -189,10 +199,11 @@ module.exports = class Topic {
             .setTopicId(topicId);
 
         //Submit the query to a Hedera network
-        const info = await query.execute(myaccount.testClient);
+        const info = await query.execute(myaccount);
 
         //Print the account key to the console
-        console.log('Resultado equivalente a: ' + bytes + ' com topicId: ' + topicId);
+
+        console.log("Transação de " + bytes + ' com topicId: ' + topicId);
         console.log(info.expirationTime);
 
     }
