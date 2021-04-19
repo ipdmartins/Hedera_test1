@@ -1,8 +1,7 @@
 
 // Example uses Hedera JavaScript SDK v1.1.8
-const { Client, AccountBalanceQuery } = require("@hashgraph/sdk");
+const { Client } = require("@hashgraph/sdk");
 require("dotenv").config();
-
 
 // Grab your account ID and private key from the .env file
 const operatorAccountId = process.env.OPERATOR_ID;

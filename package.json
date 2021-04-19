@@ -1,17 +1,29 @@
 {
-  "name": "test1",
+  "name": "hedera_test1",
   "version": "1.0.0",
-  "description": "first implementation of Hedera",
-  "main": "index.js",
+  "description": "",
+  "main": "filer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm test"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ipdmartins/Hedera_test1.git"
+  },
+  "keywords": [
+    "Hashgraph",
+    "blockchain"
+  ],
   "author": "Igor Martins",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ipdmartins/Hedera_test1/issues"
+  },
+  "homepage": "https://github.com/ipdmartins/Hedera_test1#readme",
   "dependencies": {
-    "@hashgraph/sdk": "^1.4.4",
+    "@hashgraph/sdk": "^2.0.16",
     "dotenv": "^8.2.0",
-    "systeminformation": "^4.30.11",
-    "uriel": "^2.0.2"
+    "systeminformation": "^5.2.5",
+    "worker-thread-pool": "^1.0.0"
   }
 }
