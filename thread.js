@@ -11,36 +11,18 @@ const message100 = 'Lorem ipsum egestas lorem aliquam sapien, vivamus taciti inn
 const client = testerAccount.testClient;
 
 if (isMainThread) {
-    let id = 25;
-    for (let x = 1; x <= 400; x++) {
-        const worker = new Worker(__filename, { workerData: { num: 1, byte: 100, lote: id } })
-        switch (x) {
-            case 1:
-                id = 50;
-                break;
-            case 3:
-                id = 100;
-                break;
-            case 7:
-                id = 200;
-                break;
-            case 15:
-                id = 400;
-            default:
-                break;
-        }
+    let id = 50;
+    for (let x = 1; x <= 50; x++) {
+        const worker = new Worker(__filename, { workerData: { num: 1, byte: 1, lote: id } })
         worker.once('message', function () {
             console.log('Thread worker id: ' + worker.threadId + ' finished');
         })
         worker.on('error', console.error);
         console.log('Iniciando worker id: ' + worker.threadId);
     }
-
 } else {
     if (!workerData) return;
-
     executor();
-
 }
 
 async function executor() {

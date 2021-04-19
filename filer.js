@@ -15,22 +15,17 @@ var process = require('process');
 const fs = require('fs')
 
 module.exports = class Filer {
-
     constructor() {
         this.path = '/home/ipdmartins/Hashgraph/';
     }
 
     async fileCreator(numberOfTransactions, appendFileContent, bytes, lotes) {
-
         const client = Client.forTestnet();
-
         if (process.env.OPERATOR_PRIVATE_KEY != null && process.env.OPERATOR_ID != null) {
             const operatorKey = PrivateKey.fromString(process.env.OPERATOR_PRIVATE_KEY);
             const operatorId = AccountId.fromString(process.env.OPERATOR_ID);
-
             client.setOperator(operatorId, operatorKey);
         }
-
         const resp = await new FileCreateTransaction()
             .setKeys([client.operatorPublicKey])
             .setContents("UDESC-ipdmartins-TCC-Hashgraph")
@@ -40,25 +35,11 @@ module.exports = class Filer {
 
         const receipt = await resp.getReceipt(client);
         const fileId = receipt.fileId;
-
         console.log("file ID = " + fileId);
-
         this.uploader(client, numberOfTransactions, fileId, appendFileContent, resp, bytes, lotes);
     }
 
     async uploader(client, numberOfTransactions, fileId, appendFileContent, resp, bytes, lotes) {
-
-        ///////// referent to analyzeTPC  /////////
-        await si.currentLoad().then(data => {
-            return data;
-        })
-        ///////// referent to analyzeTPC  /////////
-
-        ///////// referent to analyzeTPDIO  /////////
-        const dataPreviousIO = await si.disksIO().then(data => {
-            return data;
-        })
-        ///////// referent to analyzeTPDIO  /////////
 
         ///////// referent to analyzeTPND  /////////
         const dataPreviousNet = await si.networkStats().then(data => { return data; })
@@ -95,31 +76,7 @@ module.exports = class Filer {
         //get the transaction's end in millicsec for analyzeTPS
         const miliafter = Date.now();
 
-        const postProcessMemoryUsage = process.memoryUsage().rss;
-
-        ///////// referent to analyzeTPC  /////////
-        const cpuUsageByTheProcess = await si.currentLoad().then(data => {
-            return data;
-        })
-        const coreFrequency = await si.cpuCurrentSpeed().then(data => data.cores[0]);
-        ///////// referent to analyzeTPC  /////////
-
-        ///////// referent to analyzeTPMS  /////////
-        const dataPostMem = await si.processes().then(data => {
-            return data;
-        })
-        const RMEM = dataPostMem.list[0].memRss;
-        const VMEM = dataPostMem.list[0].memVsz;
-        ///////// referent to analyzeTPMS  /////////
-
-        ///////// referent to analyzeTPDIO  /////////
-        const dataPostIO = await si.disksIO().then(data => {
-            return data;
-        })
-
-        const DISKR = (dataPostIO.rIO - dataPreviousIO.rIO);
-        const DISKW = (dataPostIO.wIO - dataPreviousIO.wIO);
-        ///////// referent to analyzeTPDIO  /////////    
+        const postProcessMemoryUsage = process.memoryUsage().rss; 
 
         ///////// referent to analyzeTPND  /////////
         const dataPostNet = await si.networkStats().then(data => { return data; })
@@ -138,15 +95,6 @@ module.exports = class Filer {
         const ARD = frameworkAnalyzer.analyzeARD(sumTxInputTxComfirmed, txconfirmedcount)
         console.log("Average Response Delay in seconds (txs/s): ", ARD);
 
-        const TPC = frameworkAnalyzer.analyzeTPC(txconfirmedcount, coreFrequency, cpuUsageByTheProcess.rawCurrentLoadUser)
-        console.log("Transactions Per CPU in seconds (txs/(GHz · s)): ", TPC);
-
-        const TPMS = frameworkAnalyzer.analyzeTPMS(txconfirmedcount, RMEM, VMEM)
-        console.log("Transacoes de memoria por segundo (txs/(MB · s)): ", TPMS);
-
-        const TPDIO = frameworkAnalyzer.analyzeTPDIO(txconfirmedcount, DISKR, DISKW)
-        console.log("Transacoes por disco (txs/kilobytes): ", TPDIO);
-
         const TPND = frameworkAnalyzer.analyzeTPND(txconfirmedcount, UPLOAD, DOWNLOAD)
         console.log("Transacoes de dados na rede (txs/kilobytes): ", TPND);
 
@@ -157,14 +105,6 @@ module.exports = class Filer {
         console.log('MilliTime before transaction: ' + milibefore);
         console.log('MilliTime after transaction: ' + miliafter);
         console.log('Sum of time in t (before transaction) and t (after success) in miliseconds: ' + sumTxInputTxComfirmed);
-        console.log('Measured single core: ' + coreFrequency);
-        console.log('Measured CPU user raw current load transaction: ' + cpuUsageByTheProcess.rawCurrentLoadUser);
-        console.log('Measured process real memory resident set size after transaction: ' + RMEM);
-        console.log('Measured process virtual memory size after transaction: ' + VMEM);
-        console.log('Measured data read IOs on all mounted drives before transaction: ' + dataPreviousIO.rIO);
-        console.log('Measured data read read IOs on all mounted drives after transaction: ' + dataPostIO.rIO);
-        console.log('Measured data written IOs on all mounted drives before transaction: ' + dataPreviousIO.wIO);
-        console.log('Measured data written IOs on all mounted drives after transaction: ' + dataPostIO.wIO);
         console.log('Measured transferred bytes overall (upload) before transacion: ' + previousUPLOAD);
         console.log('Measured transferred bytes overall (upload) after transacion: ' + postUPLOAD);
         console.log('Measured received bytes overall (download) before transacion: ' + previousDOWNLOAD);
@@ -176,16 +116,16 @@ module.exports = class Filer {
         one = one.replace('.', ',')
         let two = (ARD.ARD).toString()
         two = two.replace('.', ',')
-        let three = (TPC.TPC).toString()
-        three = three.replace('.', ',')
-        let four = (TPMS.TPMS).toString()
-        four = four.replace('.', ',')
-        let five = (TPDIO.TPDIO).toString()
-        five = five.replace('.', ',')
+        // let three = (TPC.TPC).toString()
+        // three = three.replace('.', ',')
+        // let four = (TPMS.TPMS).toString()
+        // four = four.replace('.', ',')
+        // let five = (TPDIO.TPDIO).toString()
+        // five = five.replace('.', ',')
         let six = (TPND.TPND).toString()
         six = six.replace('.', ',')
 
-        const result = `${one};${two};${three};${four};${five};${six}\n`
+        const result = `${one};${two};${six}\n`
 
         fs.appendFile(this.path+bytes+'_bytes'+lotes+'_lotes.txt', result, (err) => {
             if (err) throw err;
@@ -207,11 +147,3 @@ module.exports = class Filer {
     }
 
 }
-
-
-
-
-
-
-
-
